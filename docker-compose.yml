@@ -22,5 +22,14 @@ services:
     depends_on:
       - mongodb
 
+  # High-performance distributed key-value session storage engine
+  pixel-terminal-cache:
+    image: redis:alpine
+    container_name: pixel_terminal_cache
+    command: redis-server --requirepass secret_password_123 --appendonly yes
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
 volumes:
   mongo_data:

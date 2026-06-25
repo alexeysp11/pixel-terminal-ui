@@ -7,7 +7,7 @@ namespace PixelTerminalUi.Benchmarks;
 [MemoryDiagnoser]
 [Orderer(SummaryOrderPolicy.FastestToSlowest)]
 [RankColumn]
-public class RenderingAllocationBenchmark
+public sealed class RenderingAllocationBenchmark
 {
     private FakeScreen _largeScreen = null!;
     private OldFakeRenderer _oldRenderer = null!;

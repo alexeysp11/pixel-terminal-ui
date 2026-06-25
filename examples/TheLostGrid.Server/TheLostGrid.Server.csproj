@@ -14,7 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\PixelTerminalUI.Contracts\PixelTerminalUI.Contracts.csproj" />
-    <ProjectReference Include="..\..\src\PixelTerminalUI.Persistence.Mongo\PixelTerminalUI.Persistence.Mongo.csproj" />
+    <ProjectReference Include="..\..\src\PixelTerminalUI.Persistence.Redis\PixelTerminalUI.Persistence.Redis.csproj" />
     <ProjectReference Include="..\..\src\PixelTerminalUI.StatelessEngine\PixelTerminalUI.StatelessEngine.csproj" />
   </ItemGroup>
 

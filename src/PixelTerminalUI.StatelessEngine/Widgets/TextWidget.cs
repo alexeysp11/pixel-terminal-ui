@@ -61,7 +61,7 @@ public record TextWidget
     /// <value>
     /// <see langword="true"/> if the widget is editable; otherwise, <see langword="false"/>. The default is <see langword="false"/>.
     /// </value>
-    public virtual bool Editable { get; set; } = false;
+    public virtual bool Editable { get; set; }
 
     /// <summary>
     /// Gets or init the sequence priority index for input focus navigation loops.

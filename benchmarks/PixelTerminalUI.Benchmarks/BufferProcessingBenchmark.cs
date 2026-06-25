@@ -5,7 +5,7 @@ using PixelTerminalUI.Contracts.Optimizations;
 namespace PixelTerminalUi.Benchmarks;
 
 [MemoryDiagnoser]
-public class BufferProcessingBenchmark
+public sealed class BufferProcessingBenchmark
 {
     private const int Width = 40;
     private const int Height = 12;

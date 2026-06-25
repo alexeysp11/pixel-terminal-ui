@@ -6,13 +6,13 @@ using TheLostGrid.Server.Scenarios.TerminalHack;
 using TheLostGrid.Server.Scenarios.Welcome;
 using PixelTerminalUI.StatelessEngine.Commands.DismissError;
 using PixelTerminalUI.StatelessEngine.Extensions.ServiceCollectionExtensions;
-using PixelTerminalUI.Persistence.Mongo.Extensions.ServiceCollectionExtensions;
+using PixelTerminalUI.Persistence.Redis.Extensions.ServiceCollectionExtensions;
 using TheLostGrid.Server.Scenarios.DroneDeployment;
 using PixelTerminalUI.StatelessEngine.Validators;
 
 namespace TheLostGrid.Server;
 
-public class Program
+public sealed class Program
 {
     public static void Main(string[] args)
     {
@@ -36,10 +36,11 @@ public class Program
             options.EnableDoubleBuffering = true;
         });
         builder.Services.AddPixelTerminalStartup<WelcomeScreen>();
-        builder.Services.AddTerminalMongoRepository(
-            "mongodb://admin:secret_password_123@localhost:27017/?authSource=admin",
-            "TheLostGridGameDb",
-            custom => custom
+
+        // Attach optimized Redis state delivery distribution repository layer
+        builder.Services.AddTerminalRedisRepository(
+            connectionString: "localhost:6379,password=secret_password_123,abortConnect=false",
+            configureCustomScreens: custom => custom
                 // Screens registration
                 .RegisterScreen<WelcomeScreen>()
                 .RegisterScreen<CharacterCreationScreen>()

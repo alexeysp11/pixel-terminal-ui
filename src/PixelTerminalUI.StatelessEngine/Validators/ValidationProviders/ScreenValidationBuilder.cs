@@ -18,10 +18,7 @@ public sealed class ScreenValidationBuilder(List<ValidationDelegate> validators)
     /// <returns>The active configuration builder instance to sustain continuous processing chaining paths.</returns>
     public ScreenValidationBuilder Add(ValidationDelegate validator)
     {
-        if (validator == null)
-        {
-            throw new ArgumentNullException(nameof(validator));
-        }
+        ArgumentNullException.ThrowIfNull(validator);
 
         _validators.Add(validator);
         return this;

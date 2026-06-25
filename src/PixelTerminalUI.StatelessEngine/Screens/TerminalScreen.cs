@@ -60,12 +60,4 @@ public abstract record TerminalScreen
     /// The currently focused input widget, or <see langword="null"/> if no input field is active.
     /// </value>
     public Guid? FocusedEntryWidgetId { get; set; }
-
-    /// <summary>
-    /// Gets a value indicating whether double-buffering optimization is enabled for this screen layout.
-    /// When set to <see langword="true"/>, the layout engine caches a pre-rendered static raster bitmap layer of non-interactive widgets, 
-    /// directly copying it into the back-buffer using memory blocks operations and drawing only mutated focus/input elements 
-    /// to maximize high-throughput pipeline execution.
-    /// </summary>
-    public bool EnableDoubleBuffering { get; init; } = false;
 }
