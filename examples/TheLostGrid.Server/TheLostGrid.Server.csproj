@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.27" />
+    <PackageReference Include="Serilog" Version="4.2.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\PixelTerminalUI.Contracts\PixelTerminalUI.Contracts.csproj" />
+    <ProjectReference Include="..\..\src\PixelTerminalUI.Persistence.Mongo\PixelTerminalUI.Persistence.Mongo.csproj" />
+    <ProjectReference Include="..\..\src\PixelTerminalUI.StatelessEngine\PixelTerminalUI.StatelessEngine.csproj" />
+  </ItemGroup>
+
+</Project>

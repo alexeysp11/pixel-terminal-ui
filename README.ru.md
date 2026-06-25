@@ -1,0 +1,106 @@
+# PixelTerminalUI
+
+[English](README.md) | [Русский](README.ru.md)
+
+![.NET Version](https://img.shields.io/badge/.NET-8.0-blue?style=flat-square&logo=dotnet)
+![Architecture](https://img.shields.io/badge/Architecture-Backend--Driven%20UI-orange?style=flat-square)
+![State](https://img.shields.io/badge/State-True%20Stateless-brightgreen?style=flat-square)
+![MongoDB](https://img.shields.io/badge/Database-MongoDB-47A248?style=flat-square&logo=mongodb)
+
+**Stateless UI-движок** на базе архитектуры **Backend-Driven UI (BDUI)** для текстовых терминалов (TUI) на .NET 8.
+
+Фреймворк преобразует декларативные древовидные структуры экранных форм в плоские матрицы пикселей, полностью абстрагируя бизнес-логику от транспортного слоя. Это позволяет транслировать интерфейс через любой протокол (JSON/HTTP, gRPC, TCP-сокеты) на тонкие клиенты (ТСД, консоли, кастомные мобильные приложения), не удерживая состояние сессии в памяти сервера.
+
+📖 **[Архитектурный Whitepaper: История эволюции движка от Stateful Telnet к Stateless BDUI](docs/evolution.ru.md)** — подробный разбор legacy-проблем, оптимизации Garbage Collector и низкоуровневой битовой упаковки кадра.
+
+---
+
+## ⚡ Ключевые особенности
+
+* 🧵 **Полный Stateless:** Каждый запрос от клиента обрабатывается как изолированная атомарная транзакция. Сервер больше не удерживает в оперативной памяти тяжелые деревья открытых форм, их делегатов и сокетов между действиями пользователя.
+* 📦 **Легковесные UI-компоненты:** Формы и контролы спроектированы на базе C# рекордов (`record`). Они хранят состояние экрана, эффективно переиспользуются для мутабельных изменений без лишних аллокаций в куче и при этом идеально сериализуются во внешние хранилища.
+* ⏳ **Асинхронные Команды:** Логика переходов и бизнес-валидация инкапсулированы в независимые команды `ICommand` на базе `ValueTask`. Это обеспечивает ультимативную отзывчивость при интеграции с базами данных, внешними API и сетевыми ресурсами.
+* 💾 **Сохранение цепочки процессов:** Движок из коробки поддерживает прозрачное сохранение и восстановление шагов выполнения (точек останова) конечного автомата команд во внешнюю СУБД (MongoDB/Redis) на любом свободном узле кластера.
+
+---
+
+## 🚀 Быстрый старт (Quick Start)
+
+### 1. Опишите форму и команду
+
+Интерфейсы в `PixelTerminalUI` описываются декларативно через пассивные рекорды данных, а переходы привязываются к изолированным командам:
+
+```csharp
+// Изолированная команда для обработки навигации
+public sealed class StartGameCommand : Command<OneStepCommandState>
+{
+    public override OneStepCommandState State { get; set; } = OneStepCommandState.Initial;
+    public override Guid Id { get; } = Guid.NewGuid();
+    public override Guid ControlId { get; set; }
+
+    public override async ValueTask<bool> ExecuteAsync(ICommandContext context)
+    {
+        // Логика перехода на следующую форму
+        var nextScreen = new GamePlayScreen { Id = Guid.NewGuid(), SessionId = context.SessionId };
+        await context.SessionRepository.SaveActiveScreenAsync(context.SessionId, nextScreen);
+        return true;
+    }
+}
+
+// Декларативное описание стартового экрана
+public sealed record WelcomeScreen : TerminalScreen
+{
+    public WelcomeScreen()
+    {
+        Name = "WelcomeScreen";
+        Width = 40;
+        Height = 10;
+        
+        var inputId = Guid.NewGuid();
+        Widgets = new List<TextWidget>
+        {
+            new TextWidget { Left = 2, Top = 2, Value = "WELCOME TO THE GRID" },
+            new TextEntryWidget 
+            { 
+                Id = inputId,
+                Left = 2, Top = 5, Width = 10,
+                Hint = "PRESS ENTER TO START",
+                Command = new StartGameCommand { ControlId = inputId }
+            }
+        };
+        FocusedEntryWidgetId = inputId;
+    }
+}
+```
+
+### 2. Зарегистрируйте компоненты в DI-контейнере
+
+Фреймворк предоставляет удобный Fluent API для подключения ядра рендеринга и распределенного репозитория сессий (например, на базе MongoDB):
+
+```csharp
+var builder = WebApplication.CreateBuilder(args);
+
+// Инициализация ядра PixelTerminalUI
+builder.Services.AddPixelTerminalUI();
+builder.Services.AddPixelTerminalStartup<WelcomeScreen>();
+
+// Подключение распределенного хранилища состояний интерфейса
+builder.Services.AddMongoUserSessionRepository(
+    "mongodb://localhost:27017",
+    "TerminalGameDb",
+    setup => setup
+        .RegisterScreen<WelcomeScreen>()
+        .RegisterScreen<GamePlayScreen>()
+        .RegisterCommand<StartGameCommand>()
+);
+```
+
+---
+
+## 🗺️ Roadmap
+
+Проект находится в стадии активного R&D. Основные направления развития:
+
+- [ ] **Double Buffering:** Хранение предыдущего кадра сессии на сервере для вычисления дельты изменений.
+- [ ] **Delta Транспорт:** Оптимизация сетевого трафика за счет отправки клиенту только изменившихся пикселей вместо полной матрицы кадра.
+- [ ] **Бинарный протокол (Bit Packing):** Упаковка символа, цветов `ConsoleColor` и инверсии пикселя в один 4-байтовый `uint` через побитовые сдвиги для сокращения сетевого оверхеда в 22 раза.

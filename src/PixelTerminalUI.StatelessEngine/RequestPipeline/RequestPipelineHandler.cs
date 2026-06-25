@@ -1,0 +1,237 @@
+﻿using System.Buffers;
+using PixelTerminalUI.Contracts.Common;
+using PixelTerminalUI.Contracts.Dto;
+using PixelTerminalUI.Contracts.Optimizations;
+using PixelTerminalUI.StatelessEngine.Commands.CommandContexts;
+using PixelTerminalUI.StatelessEngine.Extensions.ServiceCollectionExtensions;
+using PixelTerminalUI.StatelessEngine.Factories.StartupScreen;
+using PixelTerminalUI.StatelessEngine.Factories.TerminalErrorScreen;
+using PixelTerminalUI.StatelessEngine.Navigation;
+using PixelTerminalUI.StatelessEngine.Rendering.Core;
+using PixelTerminalUI.StatelessEngine.Repositories;
+using PixelTerminalUI.StatelessEngine.ResponseBuilders;
+using PixelTerminalUI.StatelessEngine.Screens;
+using PixelTerminalUI.StatelessEngine.SymbolHandling;
+using PixelTerminalUI.StatelessEngine.Validators;
+using PixelTerminalUI.StatelessEngine.Validators.ValidationProviders;
+using PixelTerminalUI.StatelessEngine.Widgets;
+
+namespace PixelTerminalUI.StatelessEngine.RequestPipeline;
+
+/// <summary>
+/// Orchestrates the primary structural connection pipeline by coordinating validation rules, 
+/// executing state mutations via input special symbols and embedded components commands, and directing the final double-buffered view layout rendering sequences.
+/// </summary>
+/// <param name="options">The centralized configurations container used to selectively bypass or enforce performance optimizations.</param>
+/// <param name="renderer">The stateless canvas viewport matrix compiler used to paint screen layouts into flat arrays containers.</param>
+/// <param name="sessionRepository">The consolidated data storage abstraction boundary managing persistent multi-document screen trees and cache records states.</param>
+/// <param name="startupScreenFactory">The activation delegate factory used to initialize fresh screen trees during cold start events.</param>
+/// <param name="adaptiveResponseBuilder">The pure functional matrix difference computation utility used to branch transport packets based on change density threshold ratios.</param>
+/// <param name="validationProvider">The dynamic registry repository storing screen-specific stateless verification constraints.</param>
+public sealed class RequestPipelineHandler(
+    PixelTerminalUIOptions options,
+    IStatelessRenderer renderer,
+    ITerminalSessionRepository sessionRepository,
+    IStartupScreenFactory startupScreenFactory,
+    ITerminalErrorScreenFactory errorScreenFactory,
+    IAdaptiveResponseBuilder adaptiveResponseBuilder,
+    IScreenValidationProvider validationProvider) : IRequestPipelineHandler
+{
+    private readonly SpecialSymbolHandler _symbolHandler = new();
+    private readonly FocusManager _focusManager = new();
+
+    /// <inheritdoc/>
+    public async Task<TerminalResponse> HandleInputAsync(TerminalRequest request)
+    {
+        TerminalScreen? screen = null;
+        if (request.SessionId.HasValue)
+        {
+            screen = await sessionRepository.GetActiveScreenAsync(request.SessionId.Value);
+        }
+
+        Guid sessionId = request.SessionId ?? Guid.NewGuid();
+        if (screen is null)
+        {
+            screen = startupScreenFactory.CreateScreen(sessionId);
+            await sessionRepository.SaveActiveScreenAsync(sessionId, screen);
+            return await RenderAndBuildResponseAsync(screen);
+        }
+
+        // Evaluate systemic industrial terminal navigational special symbols
+        SymbolHandlingResult symbolResult = _symbolHandler.HandleSymbol(screen, request.UserInput);
+
+        if (symbolResult.Action == SymbolResultActionType.TerminateSession)
+        {
+            // Pack character payload into 32-bit unsigned primitives with default colors
+            // (Foreground: White = 15, Background: Black = 0, Flags: 0)
+            const byte background = (byte)ConsoleColor.Black;
+            const int foreground = (byte)ConsoleColor.White;
+            uint[] flatBuffer = [
+                PixelBitPacker.Pack('S', background, foreground, 0),
+                PixelBitPacker.Pack('E', background, foreground, 0),
+                PixelBitPacker.Pack('S', background, foreground, 0)
+            ];
+
+            return new FullFrameResponse(sessionId, flatBuffer, 3, 1);
+        }
+
+        if (symbolResult.Action == SymbolResultActionType.NavigateToParentScreen)
+        {
+            // Safety check: if the current screen layout container lacks parent identifiers pointers, freeze context
+            if (!screen.ParentScreenId.HasValue)
+            {
+                await sessionRepository.SaveActiveScreenAsync(sessionId, screen);
+                return await RenderAndBuildResponseAsync(screen);
+            }
+
+            Guid closingScreenId = screen.Id;
+            Guid parentScreenId = screen.ParentScreenId.Value;
+
+            // Pull the structural historical parent blueprint configuration using its explicit target instance checkpoint identifier
+            TerminalScreen? parentScreen = await sessionRepository.GetScreenByIdAsync(sessionId, parentScreenId);
+
+            if (parentScreen != null)
+            {
+                await sessionRepository.SaveActiveScreenAsync(sessionId, parentScreen);
+                await sessionRepository.RemoveScreenAsync(sessionId, closingScreenId);
+                return await RenderAndBuildResponseAsync(parentScreen);
+            }
+        }
+
+        if (symbolResult.Action == SymbolResultActionType.ShiftFocusForward)
+        {
+            screen.FocusedEntryWidgetId = _focusManager.GetNextFocus(screen);
+            await sessionRepository.SaveActiveScreenAsync(sessionId, screen);
+            return await RenderAndBuildResponseAsync(screen);
+        }
+
+        if (symbolResult.Action == SymbolResultActionType.ShiftFocusBackward)
+        {
+            // Reset edit widget.
+            TextWidget? focusedEntryWidget = screen.Widgets.FirstOrDefault(x => x.Id == screen.FocusedEntryWidgetId);
+            if (focusedEntryWidget is not null)
+            {
+                focusedEntryWidget.Value = string.Empty;
+            }
+
+            screen.FocusedEntryWidgetId = _focusManager.GetPreviousFocus(screen);
+            await sessionRepository.SaveActiveScreenAsync(sessionId, screen);
+            return await RenderAndBuildResponseAsync(screen);
+        }
+
+        // Processing local screen state mutations (e.g. data scrub via -r token)
+        if (symbolResult.Action == SymbolResultActionType.StayOnScreen)
+        {
+            await sessionRepository.SaveActiveScreenAsync(sessionId, screen);
+            return await RenderAndBuildResponseAsync(screen);
+        }
+
+        // Execute quick stateless validation rules from memory registry dictionaries maps
+        IEnumerable<ValidationDelegate> screenValidators = validationProvider.GetValidatorsForScreen(screen.Name);
+        foreach (ValidationDelegate validate in screenValidators)
+        {
+            ValidationResult validationResult = validate(screen, request.UserInput);
+            if (!validationResult.IsValid)
+            {
+                SimpleMessageScreen errorScreen = errorScreenFactory.BuildErrorScreen(sessionId, screen, validationResult.ErrorMessage ?? "Validation Fault!");
+                await sessionRepository.SaveActiveScreenAsync(sessionId, errorScreen);
+                return await RenderAndBuildResponseAsync(errorScreen);
+            }
+        }
+
+        // Evaluate active editable fields business values inputs and workflows transitions
+        TextWidget? focusedWidget = screen.Widgets.FirstOrDefault(c => c.Id == screen.FocusedEntryWidgetId);
+        if (focusedWidget is TextEntryWidget entryWidget)
+        {
+            if (string.IsNullOrEmpty(entryWidget.Value) || !string.IsNullOrEmpty(request.UserInput))
+            {
+                entryWidget.Value = request.UserInput;
+            }
+
+            if (entryWidget.Command != null)
+            {
+                CommandContext commandContext = new(
+                    sessionId: sessionId,
+                    screen: screen,
+                    focusedEntryWidget: entryWidget,
+                    inputValue: entryWidget.Value,
+                    sessionRepository: sessionRepository
+                );
+
+                bool isExecutionSuccessful = await entryWidget.Command.ExecuteAsync(commandContext);
+                if (!isExecutionSuccessful)
+                {
+                    entryWidget.Value = string.Empty;
+                    await sessionRepository.SaveActiveScreenAsync(sessionId, screen);
+
+                    string errorMessage = commandContext.ErrorMessage ?? "Command Rejected Execution!";
+                    SimpleMessageScreen businessErrorScreen = errorScreenFactory.BuildErrorScreen(sessionId, screen, errorMessage);
+                    await sessionRepository.SaveActiveScreenAsync(sessionId, businessErrorScreen);
+                    return await RenderAndBuildResponseAsync(businessErrorScreen);
+                }
+                screen = await sessionRepository.GetActiveScreenAsync(sessionId) ?? screen;
+            }
+
+            if (screen.FocusedEntryWidgetId == entryWidget.Id)
+            {
+                screen.FocusedEntryWidgetId = _focusManager.GetNextFocus(screen);
+            }
+        }
+        await sessionRepository.SaveActiveScreenAsync(sessionId, screen);
+        return await RenderAndBuildResponseAsync(screen);
+    }
+
+    private async Task<TerminalResponse> RenderAndBuildResponseAsync(TerminalScreen screen)
+    {
+        int width = screen.Width;
+        int height = screen.Height;
+        int totalCellsCount = width * height;
+
+        // Conditionally fetch historical state data rows from database storage only if double buffering is explicitly enabled
+        uint[]? historicalBuffer = null;
+        if (options.EnableDoubleBuffering)
+        {
+            historicalBuffer = await sessionRepository.GetHistoricalBufferAsync(screen.SessionId);
+        }
+
+        Pixel[] pooledBuffer = ArrayPool<Pixel>.Shared.Rent(totalCellsCount);
+        uint[] currentFlatBuffer = new uint[totalCellsCount];
+
+        try
+        {
+            renderer.Draw(screen, pooledBuffer);
+
+            for (int index = 0; index < totalCellsCount; index++)
+            {
+                Pixel currentPixel = pooledBuffer[index];
+                byte inversionFlag = (byte)(currentPixel.IsInverted ? 1 : 0);
+
+                currentFlatBuffer[index] = PixelBitPacker.Pack(
+                    currentPixel.Symbol,
+                    (byte)currentPixel.Foreground,
+                    (byte)currentPixel.Background,
+                    inversionFlag);
+            }
+        }
+        finally
+        {
+            ArrayPool<Pixel>.Shared.Return(pooledBuffer);
+        }
+
+        // Builder maps data cleanly: if historical buffer is null, it immediately skips delta processing loop and yields a FullFrameResponse
+        TerminalResponse response = adaptiveResponseBuilder.Build(
+            screen.SessionId,
+            currentFlatBuffer,
+            historicalBuffer,
+            width,
+            height);
+
+        // Conditionally bypass persistence write calls to save networking infrastructure bandwidth costs if the cache is disabled
+        if (options.EnableDoubleBuffering)
+        {
+            await sessionRepository.SaveHistoricalBufferAsync(screen.SessionId, currentFlatBuffer);
+        }
+
+        return response;
+    }
+}
