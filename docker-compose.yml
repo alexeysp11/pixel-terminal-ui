@@ -40,5 +40,19 @@ services:
       retries: 5
     restart: unless-stopped
 
+  # Web-GUI management tool via official GitHub Container Registry
+  redis-commander:
+    container_name: redis-commander
+    hostname: redis-commander
+    image: ghcr.io/joeferner/redis-commander:latest
+    restart: always
+    environment:
+      - REDIS_HOSTS=local:pixel-terminal-cache:6379:0:secret_password_123
+    ports:
+      - "8082:8081"
+    depends_on:
+      pixel-terminal-cache:
+        condition: service_healthy
+
 volumes:
   redis_data:

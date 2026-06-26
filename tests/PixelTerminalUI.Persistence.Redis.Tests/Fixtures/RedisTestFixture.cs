@@ -1,6 +1,6 @@
 using Testcontainers.Redis;
 
-namespace PixelTerminalUI.Persistence.Redis.Tests;
+namespace PixelTerminalUI.Persistence.Redis.Tests.Fixtures;
 
 public sealed class RedisTestFixture : IAsyncLifetime
 {

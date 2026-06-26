@@ -627,9 +627,10 @@ builder.Services.AddModuleEndpoints();
 
 ```csharp
 // Подключение распределенного хранилища сессий и кадровых буферов в Redis
-builder.Services.AddTerminalRedisRepository(
-    connectionString: "localhost:6379,password=secret_password_123,abortConnect=false",
-    configureCustomScreens: custom => custom
+builder.Services
+    .AddTerminalRedisRepository(redisConnectionString)
+    .WithSessionTimeout(TimeSpan.FromMinutes(30))
+    .RegisterCustomScreens(custom => custom
         // Регистрация экранов для корректной полиморфной JSON-сериализации
         .RegisterScreen<WelcomeScreen>()
         .RegisterScreen<CharacterCreationScreen>()

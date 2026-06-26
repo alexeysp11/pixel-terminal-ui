@@ -85,16 +85,14 @@ builder.Services.AddPixelTerminalUI();
 builder.Services.AddPixelTerminalStartup<WelcomeScreen>();
 
 // Connecting a distributed state store based on Redis Hash
-builder.Services.AddTerminalRedisRepository(
-    connectionString: "localhost:6379,abortConnect=false",
-    configureCustomScreens: resolver => 
-    {
+builder.Services
+    .AddTerminalRedisRepository("localhost:6379,abortConnect=false")
+    .WithSessionTimeout(TimeSpan.FromHours(24))
+    .RegisterCustomScreens(custom => custom
         // Registering custom polymorphic screens, commands, and widgets for your app
-        resolver
-            .RegisterScreen<WelcomeScreen>()
-            .RegisterScreen<GamePlayScreen>()
-            .RegisterCommand<StartGameCommand>();
-    });
+        .RegisterScreen<WelcomeScreen>()
+        .RegisterScreen<GamePlayScreen>()
+        .RegisterCommand<StartGameCommand>());
 ```
 
 <details>
@@ -114,10 +112,30 @@ builder.Services.AddMongoUserSessionRepository(
 ```
 </details>
 
+## 🐳 Quick Start in Docker
+
+You can launch the ready-made demo game and all the necessary infrastructure with a single command. The framework will automatically set up the engine core server, Redis, and a web interface for data inspection.
+
+```bash
+docker compose up -d --build
+```
+
+After successfully deploying the containers, the following local endpoints will be available:
+* 📑 **Swagger Server API:** `http://localhost:5221/swagger` — for sending commands and testing BDUI screen generation.
+* 🖥️ **Redis Commander Admin Panel:** `http://localhost:8082` — for visually analyzing the field structure within **Redis Hash** sessions in real time.
+
 ---
 
-## 🗺️ Roadmap
+## 🗺️ Project Roadmap
 
-- [ ] **Double Buffering:** Persist the previous viewport matrix frame snapshot on the server side to compute a differential layout diff.
-- [ ] **Delta Network Transport:** Maximize network bandwidth efficiency by transmitting only changed layout pixel coordinates instead of broadcasting full matrices.
-- [ ] **Binary Bit Packing:** Pack the character `char` literal, `ConsoleColor` attributes, and inversion flags into a single 4-byte primitive `uint` via fast bitwise operations to shrink raw payloads 22-fold.
+The project is being developed as an experimental R&D sandbox. Current implementation status of key architectural nodes:
+
+### ✅ Implemented
+- [x] **Double Buffering:** Storing the previous session frame on the server to calculate the change delta and send only the changed pixels to the client.
+- [x] **Binary Protocol (Bit Packing):** Packing the symbol, `ConsoleColor` colors, and pixel inverse into a single 4-byte `uint` using bitwise shifts (reducing network overhead).
+- [x] **Redis Hash Persistence:** Migrating hot UI state and frame buffers from MongoDB to Redis Hash atomic fields to reduce memory allocations ([Issue #2](https://github.com/alexeysp11/pixel-terminal-ui/issues/2)).
+
+### ⏳ In Development & Backlog
+- [ ] **Interactive Form Input:** Fully handle control focus and implement data entry scenarios within form text fields ([Issue #1](https://github.com/alexeysp11/pixel-terminal-ui/issues/1)).
+- [ ] **Resilient CLI Client:** Refactoring the console thin client host to use `Microsoft.Extensions.Hosting`, moving configurations to AppSettings, and implementing `Polly` retry policies for a stable connection ([Issue #3](https://github.com/alexeysp11/pixel-terminal-ui/issues/3)).
+- [ ] **Observability Extension:** Integration of the OpenTelemetry Lightweight Agent (OTLP) to automatically collect Kestrel metrics and trace command execution chains without adding codebase bloat.

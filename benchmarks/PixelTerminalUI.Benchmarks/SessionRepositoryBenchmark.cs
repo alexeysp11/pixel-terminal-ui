@@ -9,7 +9,7 @@ using StackExchange.Redis;
 using PixelTerminalUI.StatelessEngine.Screens;
 using PixelTerminalUI.Persistence.Redis.Repositories;
 using PixelTerminalUI.Persistence.Mongo.Repositories;
-using PixelTerminalUI.Persistence.Redis.Extensions.ServiceCollectionExtensions;
+using PixelTerminalUI.Persistence.Redis.Configuration;
 
 namespace PixelTerminalUI.Benchmarks;
 
@@ -59,9 +59,10 @@ public class SessionRepositoryBenchmark
         RedisJsonTypeResolver typeResolver = new();
         typeResolver.RegisterScreen<BenchmarkWelcomeScreen>().RegisterScreen<BenchmarkGamePlayScreen>();
         JsonSerializerOptions jsonOptions = typeResolver.CreateOptions();
+        RedisCacheOptions cacheOptions = new();
 
         _redisMultiplexer = ConnectionMultiplexer.Connect("localhost:6379,password=secret_password_123,abortConnect=false");
-        _redisRepository = new RedisTerminalSessionRepository(NullLogger<RedisTerminalSessionRepository>.Instance, _redisMultiplexer, jsonOptions);
+        _redisRepository = new RedisTerminalSessionRepository(NullLogger<RedisTerminalSessionRepository>.Instance, _redisMultiplexer, jsonOptions, cacheOptions);
     }
 
     [GlobalCleanup]

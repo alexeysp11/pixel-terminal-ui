@@ -36,9 +36,10 @@ public sealed class Program
             ?? throw new InvalidOperationException("Unable to get Redis connection string");
 
         // Attach optimized Redis state delivery distribution repository layer
-        builder.Services.AddTerminalRedisRepository(
-            connectionString: redisConnectionString,
-            configureCustomScreens: custom => custom
+        builder.Services
+            .AddTerminalRedisRepository(redisConnectionString)
+            .WithSessionTimeout(TimeSpan.FromMinutes(30))
+            .RegisterCustomScreens(custom => custom
                 // Screens registration
                 .RegisterScreen<WelcomeScreen>()
                 .RegisterScreen<CharacterCreationScreen>()

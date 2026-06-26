@@ -3,15 +3,18 @@ using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
+using PixelTerminalUI.Persistence.Redis.Configuration;
 using PixelTerminalUI.Persistence.Redis.Extensions.ServiceCollectionExtensions;
 using PixelTerminalUI.Persistence.Redis.Repositories;
+using PixelTerminalUI.Persistence.Redis.Tests.Fakes;
+using PixelTerminalUI.Persistence.Redis.Tests.Fixtures;
 using PixelTerminalUI.StatelessEngine.Screens;
 using StackExchange.Redis;
 
-namespace PixelTerminalUI.Persistence.Redis.Tests;
+namespace PixelTerminalUI.Persistence.Redis.Tests.Extensions.ServiceCollectionExtensions;
 
 [Collection(nameof(RedisCollection))]
-public sealed class RedisInfrastructureTests(RedisTestFixture fixture)
+public sealed class RedisRepositoryExtensionsTests(RedisTestFixture fixture)
 {
     [Fact]
     public void RedisJsonTypeResolver_ShouldCorrectlyAppendPolymorphicDiscriminators()
@@ -40,10 +43,10 @@ public sealed class RedisInfrastructureTests(RedisTestFixture fixture)
         services.AddSingleton(loggerMock.Object);
 
         // Act
-        services.AddTerminalRedisRepository(fixture.ConnectionString, custom =>
-        {
-            custom.RegisterScreen<FakeWelcomeScreen>();
-        });
+        services
+            .AddTerminalRedisRepository(fixture.ConnectionString)
+            .WithSessionTimeout(TimeSpan.FromHours(24))
+            .RegisterCustomScreens(custom => custom.RegisterScreen<FakeWelcomeScreen>());
         ServiceProvider provider = services.BuildServiceProvider();
 
         // Assert
@@ -66,12 +69,13 @@ public sealed class RedisInfrastructureTests(RedisTestFixture fixture)
         // Arrange
         RedisJsonTypeResolver resolver = new();
         resolver.RegisterScreen<FakeWelcomeScreen>();
-        JsonSerializerOptions options = resolver.CreateOptions();
+        JsonSerializerOptions jsonOptions = resolver.CreateOptions();
+        RedisCacheOptions cacheOptions = new();
 
         IConnectionMultiplexer multiplexer = ConnectionMultiplexer.Connect(fixture.ConnectionString);
         Mock<ILogger<RedisTerminalSessionRepository>> loggerMock = new();
 
-        RedisTerminalSessionRepository repository = new(loggerMock.Object, multiplexer, options);
+        RedisTerminalSessionRepository repository = new(loggerMock.Object, multiplexer, jsonOptions, cacheOptions);
 
         Guid sessionId = Guid.NewGuid();
         TerminalScreen initialScreen = new FakeWelcomeScreen { Id = Guid.NewGuid(), Name = "FakeWelcomeScreen", SessionId = sessionId };
@@ -94,11 +98,12 @@ public sealed class RedisInfrastructureTests(RedisTestFixture fixture)
     {
         // Arrange
         RedisJsonTypeResolver resolver = new();
-        JsonSerializerOptions options = resolver.CreateOptions();
+        JsonSerializerOptions jsonOptions = resolver.CreateOptions();
+        RedisCacheOptions cacheOptions = new();
         IConnectionMultiplexer multiplexer = ConnectionMultiplexer.Connect(fixture.ConnectionString);
         Mock<ILogger<RedisTerminalSessionRepository>> loggerMock = new();
 
-        RedisTerminalSessionRepository repository = new(loggerMock.Object, multiplexer, options);
+        RedisTerminalSessionRepository repository = new(loggerMock.Object, multiplexer, jsonOptions, cacheOptions);
         Guid sessionId = Guid.NewGuid();
         uint[] mockBuffer = [12, 14, 16];
 
@@ -119,12 +124,13 @@ public sealed class RedisInfrastructureTests(RedisTestFixture fixture)
         // Arrange
         RedisJsonTypeResolver resolver = new();
         resolver.RegisterScreen<FakeWelcomeScreen>().RegisterScreen<FakeGameScreen>();
-        JsonSerializerOptions options = resolver.CreateOptions();
+        JsonSerializerOptions jsonOptions = resolver.CreateOptions();
+        RedisCacheOptions cacheOptions = new();
         IConnectionMultiplexer multiplexer = ConnectionMultiplexer.Connect(fixture.ConnectionString);
         Mock<ILogger<RedisTerminalSessionRepository>> loggerMock = new();
 
-        RedisTerminalSessionRepository repositoryA = new(loggerMock.Object, multiplexer, options);
-        RedisTerminalSessionRepository repositoryB = new(loggerMock.Object, multiplexer, options);
+        RedisTerminalSessionRepository repositoryA = new(loggerMock.Object, multiplexer, jsonOptions, cacheOptions);
+        RedisTerminalSessionRepository repositoryB = new(loggerMock.Object, multiplexer, jsonOptions, cacheOptions);
 
         Guid sessionId = Guid.NewGuid();
         TerminalScreen baseScreen = new FakeWelcomeScreen { Id = Guid.NewGuid(), Name = "FakeWelcomeScreen", SessionId = sessionId };
