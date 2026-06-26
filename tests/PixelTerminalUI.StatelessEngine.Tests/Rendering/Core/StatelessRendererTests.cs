@@ -194,7 +194,7 @@ public sealed class StatelessRendererTests
         // Wire up the actual concrete registry and rendering engine core
         List<IWidgetRenderer> boxRenderers = [new TextEntryWidgetRenderer()];
         WidgetRendererRegistry registry = new(boxRenderers);
-        IStatelessRenderer renderer = new StatelessRenderer(registry);
+        StatelessRenderer renderer = new(registry);
 
         // Act
         renderer.Draw(screen, inputBuffer);

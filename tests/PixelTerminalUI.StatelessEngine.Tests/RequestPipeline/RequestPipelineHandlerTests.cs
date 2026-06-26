@@ -662,7 +662,7 @@ public sealed class RequestPipelineHandlerTests
 
         Mock<CommandBase> failingCommandMock = new();
         failingCommandMock
-            .Setup(c => c.ExecuteAsync(Moq.It.IsAny<ICommandContext>()))
+            .Setup(c => c.ExecuteAsync(It.IsAny<ICommandContext>()))
             .ReturnsAsync(false);
 
         TextEntryWidget inputField = new()
@@ -699,16 +699,16 @@ public sealed class RequestPipelineHandlerTests
         };
 
         _sessionRepositoryMock
-            .Setup(r => r.GetActiveScreenAsync(sessionId, Moq.It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetActiveScreenAsync(sessionId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(originatingScreen);
 
         // Setup the new infrastructure error factory mock to return a valid instance instead of throwing NullReferenceException
         _errorScreenFactoryMock
-            .Setup(f => f.BuildErrorScreen(sessionId, originatingScreen, Moq.It.IsAny<string>()))
+            .Setup(f => f.BuildErrorScreen(sessionId, originatingScreen, It.IsAny<string>()))
             .Returns(mockErrorScreen);
 
         _rendererMock
-            .Setup(r => r.Draw(Moq.It.Is<TerminalScreen>(f => f.Name == "ErrorNotificationView"), Moq.It.IsAny<Pixel[]>()));
+            .Setup(r => r.Draw(It.Is<TerminalScreen>(f => f.Name == "ErrorNotificationView"), It.IsAny<Pixel[]>()));
 
         TerminalRequest request = new(sessionId, "INVALID_INPUT_VALUE");
 
@@ -724,7 +724,7 @@ public sealed class RequestPipelineHandlerTests
             .Should()
             .Be(sessionId, "because the response identity must match the originating user interactive session");
 
-        _sessionRepositoryMock.Verify(r => r.SaveActiveScreenAsync(sessionId, Moq.It.Is<TerminalScreen>(f => f.Name == "ErrorNotificationView"), Moq.It.IsAny<CancellationToken>()), Moq.Times.Once);
+        _sessionRepositoryMock.Verify(r => r.SaveActiveScreenAsync(sessionId, It.Is<TerminalScreen>(f => f.Name == "ErrorNotificationView"), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

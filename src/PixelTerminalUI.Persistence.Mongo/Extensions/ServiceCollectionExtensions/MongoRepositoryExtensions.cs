@@ -13,7 +13,7 @@ namespace PixelTerminalUI.Persistence.Mongo.Extensions.ServiceCollectionExtensio
 
 public static class MongoRepositoryExtensions
 {
-    private static int _mongoSerializationRegistrationState = 0;
+    private static int _mongoSerializationRegistrationState;
 
     /// <summary>
     /// Extension method for the client application to seamlessly configure the MongoDB storage layer.

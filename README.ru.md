@@ -75,16 +75,32 @@ public sealed record WelcomeScreen : TerminalScreen
 
 ### 2. Зарегистрируйте компоненты в DI-контейнере
 
-Фреймворк предоставляет удобный Fluent API для подключения ядра рендеринга и распределенного репозитория сессий (например, на базе MongoDB):
+Фреймворк предоставляет удобный Fluent API для подключения ядра рендеринга и высокопроизводительного распределенного репозитория сессий на базе **Redis**:
 
 ```csharp
 var builder = WebApplication.CreateBuilder(args);
 
-// Инициализация ядра PixelTerminalUI
+// Инициализация ядра PixelTerminalUI и регистрация стартового экрана
 builder.Services.AddPixelTerminalUI();
 builder.Services.AddPixelTerminalStartup<WelcomeScreen>();
 
-// Подключение распределенного хранилища состояний интерфейса
+// Подключение целевого распределенного хранилища состояний на базе Redis Hash
+builder.Services
+    .AddTerminalRedisRepository("localhost:6379,abortConnect=false")
+    .WithSessionTimeout(TimeSpan.FromHours(24))
+    .RegisterCustomScreens(custom => custom
+        // Регистрация кастомных полиморфных экранов, команд и виджетов вашего приложения
+        .RegisterScreen<WelcomeScreen>()
+        .RegisterScreen<GamePlayScreen>()
+        .RegisterCommand<StartGameCommand>());
+```
+
+<details>
+<summary>Альтернатива: Подключение MongoDB (для архивного или долгосрочного хранения)</summary>
+
+Если ваше приложение требует дисковой персистентности сессий, вы можете использовать альтернативный документо-ориентированный провайдер без изменения логики ядра:
+
+```csharp
 builder.Services.AddMongoUserSessionRepository(
     "mongodb://localhost:27017",
     "TerminalGameDb",
@@ -94,13 +110,32 @@ builder.Services.AddMongoUserSessionRepository(
         .RegisterCommand<StartGameCommand>()
 );
 ```
+</details>
+
+## 🐳 Быстрый запуск в Docker
+
+Вы можете запустить готовую демонстрационную игру и всю необходимую инфраструктуру одной командой. Фреймворк автоматически поднимет сервер ядра движка, Redis и веб-интерфейс для инспекции данных.
+
+```bash
+docker compose up -d --build
+```
+
+После успешного развертывания контейнеров вам станут доступны следующие локальные точки:
+* 📑 **Swagger API сервера:** `http://localhost:5221/swagger` — для отправки команд и проверки генерации BDUI-экранов.
+* 🖥️ **Админ-панель Redis Commander:** `http://localhost:8082` — для визуального анализа структуры полей внутри **Redis Hash** сессий в реальном времени.
 
 ---
 
-## 🗺️ Roadmap
+## 🗺️ Roadmap проекта
 
-Проект находится в стадии активного R&D. Основные направления развития:
+Проект развивается как экспериментальная R&D песочница. Текущий статус реализации ключевых архитектурных узлов:
 
-- [ ] **Double Buffering:** Хранение предыдущего кадра сессии на сервере для вычисления дельты изменений.
-- [ ] **Delta Транспорт:** Оптимизация сетевого трафика за счет отправки клиенту только изменившихся пикселей вместо полной матрицы кадра.
-- [ ] **Бинарный протокол (Bit Packing):** Упаковка символа, цветов `ConsoleColor` и инверсии пикселя в один 4-байтовый `uint` через побитовые сдвиги для сокращения сетевого оверхеда в 22 раза.
+### ✅ Реализовано
+- [x] **Double Buffering:** Хранение предыдущего кадра сессии на сервере для вычисления дельты изменений и отправки клиенту только изменившихся пикселей.
+- [x] **Бинарный протокол (Bit Packing):** Упаковка символа, цветов `ConsoleColor` и инверсии пикселя в один 4-байтовый `uint` через побитовые сдвиги (сокращение сетевого оверхеда).
+- [x] **Redis Hash Persistence:** Миграция горячего UI-стейта и кадровых буферов с MongoDB на атомарные поля Redis Hash для снижения аллокаций памяти ([Issue #2](https://github.com/alexeysp11/pixel-terminal-ui/issues/2)).
+
+### ⏳ В процессе разработки & Бэклог
+- [ ] **Interactive Form Input:** Полноценная обработка фокуса элементов управления и реализация сценариев ввода данных внутри текстовых полей форм ([Issue #1](https://github.com/alexeysp11/pixel-terminal-ui/issues/1)).
+- [ ] **Resilient CLI Client:** Рефакторинг хоста консольного тонкого клиента с переходом на `Microsoft.Extensions.Hosting`, выносом конфигураций в AppSettings и внедрением политик повторных запросов `Polly` для стабильного соединения ([Issue #3](https://github.com/alexeysp11/pixel-terminal-ui/issues/3)).
+- [ ] **Observability Extension:** Интеграция легковесного агента OpenTelemetry (OTLP) для автоматического сбора метрик Kestrel и трейсинга цепочек выполнения команд без раздувания кодовой базы.

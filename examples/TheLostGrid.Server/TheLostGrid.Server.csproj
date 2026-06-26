@@ -4,17 +4,23 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>487239c2-be68-41f5-ba97-fef1e6541451</UserSecretsId>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerfileContext>..\..</DockerfileContext>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.27" />
-    <PackageReference Include="Serilog" Version="4.2.0" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
+    <PackageReference Include="Serilog" Version="4.3.1" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="7.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\PixelTerminalUI.Contracts\PixelTerminalUI.Contracts.csproj" />
-    <ProjectReference Include="..\..\src\PixelTerminalUI.Persistence.Mongo\PixelTerminalUI.Persistence.Mongo.csproj" />
+    <ProjectReference Include="..\..\src\PixelTerminalUI.Persistence.Redis\PixelTerminalUI.Persistence.Redis.csproj" />
     <ProjectReference Include="..\..\src\PixelTerminalUI.StatelessEngine\PixelTerminalUI.StatelessEngine.csproj" />
   </ItemGroup>
 

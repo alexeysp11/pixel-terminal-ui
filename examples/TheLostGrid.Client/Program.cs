@@ -9,7 +9,7 @@ public static class Program
 {
     private static readonly HttpClient HttpClient = new()
     {
-        BaseAddress = new Uri("https://localhost:7085/"),
+        BaseAddress = new Uri("http://localhost:5221/"),
         Timeout = new TimeSpan(hours: 0, minutes: 5, seconds: 0)
     };
 

@@ -1,45 +1,45 @@
 using TheLostGrid.Server.Extensions;
 using TheLostGrid.Server.Scenarios.CharacterCreation;
+using TheLostGrid.Server.Scenarios.DroneDeployment;
 using TheLostGrid.Server.Scenarios.SectorNavigation;
 using TheLostGrid.Server.Scenarios.SectorScanner;
 using TheLostGrid.Server.Scenarios.TerminalHack;
 using TheLostGrid.Server.Scenarios.Welcome;
+using Serilog;
+using PixelTerminalUI.Persistence.Redis.Extensions.ServiceCollectionExtensions;
 using PixelTerminalUI.StatelessEngine.Commands.DismissError;
 using PixelTerminalUI.StatelessEngine.Extensions.ServiceCollectionExtensions;
-using PixelTerminalUI.Persistence.Mongo.Extensions.ServiceCollectionExtensions;
-using TheLostGrid.Server.Scenarios.DroneDeployment;
 using PixelTerminalUI.StatelessEngine.Validators;
 
 namespace TheLostGrid.Server;
 
-public class Program
+public sealed class Program
 {
     public static void Main(string[] args)
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
-
-        //Log.Logger = new LoggerConfiguration()
-        //    .WriteTo.Console()
-        //    .WriteTo.PostgreSQL(
-        //        connectionString: "Host=localhost;Database=AuditLogsDb;Username=postgres;Password=secret",
-        //        tableName: "audit_events",
-        //        needAutoCreateTable: true)
-        //    .CreateLogger();
 
         // Composition Root: Infrastructure service collection registrations setup
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
         builder.Services.AddLogging();
 
+        // Core PixelTerminalUI engine pipeline bootstrap
         builder.Services.AddPixelTerminalUI(options =>
         {
             options.EnableDoubleBuffering = true;
         });
         builder.Services.AddPixelTerminalStartup<WelcomeScreen>();
-        builder.Services.AddTerminalMongoRepository(
-            "mongodb://admin:secret_password_123@localhost:27017/?authSource=admin",
-            "TheLostGridGameDb",
-            custom => custom
+
+        // Resolve connection string from configuration layer to enable seamless Docker mapping
+        string redisConnectionString = builder.Configuration.GetConnectionString("Redis")
+            ?? throw new InvalidOperationException("Unable to get Redis connection string");
+
+        // Attach optimized Redis state delivery distribution repository layer
+        builder.Services
+            .AddTerminalRedisRepository(redisConnectionString)
+            .WithSessionTimeout(TimeSpan.FromMinutes(30))
+            .RegisterCustomScreens(custom => custom
                 // Screens registration
                 .RegisterScreen<WelcomeScreen>()
                 .RegisterScreen<CharacterCreationScreen>()
@@ -57,6 +57,7 @@ public class Program
                 .RegisterCommand<DismissErrorCommand>()
                 .RegisterCommand<DeployDroneCommand>());
 
+        // Attach layout level presentation validation constraints routines
         builder.Services.AddScreenValidators(options =>
         {
             options.ForScreen(nameof(CharacterCreationScreen))
@@ -72,6 +73,13 @@ public class Program
 
         builder.Services.AddModuleEndpoints();
 
+        // Serilog.
+        Log.Logger = new LoggerConfiguration()
+            .ReadFrom.Configuration(builder.Configuration)
+            .CreateLogger();
+        builder.Logging.ClearProviders();
+        builder.Logging.AddSerilog();
+
         WebApplication app = builder.Build();
 
         // HTTP Processing Pipeline pipeline configuration mapping routines execution
@@ -80,8 +88,6 @@ public class Program
             app.UseSwagger();
             app.UseSwaggerUI();
         }
-
-        app.UseHttpsRedirection();
 
         // Wire up the scanned endpoints routing blocks automatically without polluting this file code structure
         app.MapModuleEndpoints();

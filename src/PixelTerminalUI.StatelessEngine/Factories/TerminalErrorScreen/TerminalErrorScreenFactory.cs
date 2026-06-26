@@ -12,10 +12,7 @@ public sealed class TerminalErrorScreenFactory : ITerminalErrorScreenFactory
     /// <inheritdoc/>
     public SimpleMessageScreen BuildErrorScreen(Guid sessionId, TerminalScreen parentScreen, string errorMessage)
     {
-        if (parentScreen == null)
-        {
-            throw new ArgumentNullException(nameof(parentScreen));
-        }
+        ArgumentNullException.ThrowIfNull(parentScreen);
 
         Guid inputWidgetId = Guid.NewGuid();
         DismissErrorCommand dismissCommand = new()

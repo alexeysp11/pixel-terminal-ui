@@ -20,10 +20,7 @@ public static class PixelTerminalUiExtensions
     /// </summary>
     public static IServiceCollection AddPixelTerminalUI(this IServiceCollection services, Action<PixelTerminalUIOptions>? configure = null)
     {
-        if (services == null)
-        {
-            throw new ArgumentNullException(nameof(services));
-        }
+        ArgumentNullException.ThrowIfNull(services);
 
         // Initialize and execute configuration options if provided by the client application
         PixelTerminalUIOptions options = new();
