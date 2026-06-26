@@ -268,7 +268,7 @@ The most critical factor in the collapse of the SmartUI approach was not perform
 
 ## Transition to Stateless: Breaking the Call Stack and Architecture
 
-To make the system scalable and eliminate spaghetti code, I completely abandoned state retention in the server's memory and shifted to designing a Stateless architecture for the engine. It was founded on three principles: external state storage (MongoDB), separation of data and logic, and the use of isolated renderers. No more long-lived screen objects, nested delegates, or blocked threads.
+To make the system scalable and eliminate spaghetti code, I completely abandoned state retention in the server's memory and shifted to designing a Stateless architecture for the engine. It was founded on three principles: external state storage (MongoDB/Redis), separation of data and logic, and the use of isolated renderers. No more long-lived screen objects, nested delegates, or blocked threads.
 
 Now, every HTTP or gRPC request from a client is an isolated, short-lived transaction.
 
@@ -575,7 +575,7 @@ All the infrastructure complexity (renderer management, bit packing, adaptive de
 
 For this purpose, three key extension methods are provided for the built-in DI container `Microsoft.Extensions.DependencyInjection`:
 
-#### 1. Engine Core Initialization (`AddPixelTerminalUI`)
+#### Engine Core Initialization (`AddPixelTerminalUI`)
 This basic method deploys singleton rendering services in memory and registers built-in components out of the box (text fields, input fields, password masks). At this stage, you can also flexibly manage traffic optimization:
 
 ```csharp
@@ -589,7 +589,7 @@ builder.Services.AddPixelTerminalUI(options =>
 });
 ```
 
-#### 2. Registering the Startup Entry Point (`AddPixelTerminalStartup`)
+#### Registering the Startup Entry Point (`AddPixelTerminalStartup`)
 Specifies a template or specific screen type that the engine will automatically generate during a cold start (when the user has just opened the terminal and the session has not yet been created).
 
 ```csharp
@@ -597,7 +597,7 @@ builder.Services.AddPixelTerminalStartup<WelcomeScreen>();
 ```
 *Architectural detail:* Under the hood, the framework doesn't use reflection or heavy context factories (`IServiceScopeFactory`). Instead, the container compiles a lightweight activation delegate, `Func<Type, TerminalScreen>`, which instantiates new Transient screen objects with the speed of the native `new` operator, completely isolating user sessions from each other.
 
-#### 3. Connecting third-party plugins and widgets (`AddCustomTerminalRenderer`)
+#### Connecting third-party plugins and widgets (`AddCustomTerminalRenderer`)
 The engine is designed according to the Open-Closed principle (open for extension, closed for modification). If the team lacks standard elements, the developer creates their own widget by inheriting from `TextWidget`, writes an isolated renderer for it, and seamlessly integrates it into the general pipeline with a single line:
 
 ```csharp
@@ -606,7 +606,10 @@ builder.Services.AddCustomTerminalRenderer<CustomWidget, CustomWidgetRenderer>()
 
 When the application starts, the engine automatically collects all registered renderers into a thread-safe registry. When the StatelessRenderer encounters your custom widget in the element tree, it instantly finds the required rendering strategy, packs the data into a bitmap, and passes it to the adaptive response builder. The developer extends the system without ever touching the library's core source code.
 
-Thanks to the Fluent API, the initialization of the entire UI engine, the connection of the distributed state storage based on MongoDB, and the explicit registration of screens and commands on the backend look concise and declarative:
+#### Registering the Startup Entry Point (`AddPixelTerminalStartup`)
+
+Thanks to the Fluent API, initializing the entire UI engine, connecting the distributed state store, and explicitly registering forms and commands on the backend is concise and declarative. Basic configuration of the framework core and frame processing pipeline is performed identically for any data provider:
+
 ```csharp
 // Initializing the PixelTerminalUI core, processing pipeline, and startup screen
 builder.Services.AddPixelTerminalUI(options =>
@@ -616,43 +619,54 @@ builder.Services.AddPixelTerminalUI(options =>
 
 builder.Services.AddPixelTerminalStartup<WelcomeScreen>();
 builder.Services.AddModuleEndpoints();
+```
 
+##### Option 1. Connecting a Redis-based target storage (Recommended)
+
+To minimize latency and automatically manage memory, hot session state is connected via the Redis Hash infrastructure plugin:
+
+```csharp
+// Connecting distributed session and frame buffer storage to Redis
+builder.Services
+    .AddTerminalRedisRepository(redisConnectionString)
+    .WithSessionTimeout(TimeSpan.FromMinutes(30))
+    .RegisterCustomScreens(custom => custom
+        // Registering custom polymorphic screens, commands, and widgets for your app
+        .RegisterScreen<WelcomeScreen>()
+        .RegisterScreen<GamePlayScreen>()
+        .RegisterCommand<StartGameCommand>());
+```
+
+<details>
+<summary>Option 2. Alternative connection based on MongoDB</summary>
+
+If a classic document-oriented database is required, the same `ITerminalSessionRepository` contract is overridden by the Mongo plugin:
+
+```csharp
 // Connecting a unified session and frame buffer storage infrastructure to MongoDB
 builder.Services.AddMongoTerminalSessionRepository(
     "mongodb://admin:secret_password_123@localhost:27017/?authSource=admin",
     "TheLostGridGameDb",
     custom => custom
-        // Registering forms for correct polymorphic BSON serialization into the active_screens collection
         .RegisterScreen<WelcomeScreen>()
-        .RegisterScreen<CharacterCreationScreen>()
-        .RegisterScreen<SectorNavigationScreen>()
-        .RegisterScreen<TerminalHackScreen>()
-        .RegisterScreen<SectorScannerScreen>()
-        .RegisterScreen<DroneDeploymentScreen>()
-
-        // Registering Stateless Business Logic Commands
-        .RegisterCommand<ConnectNeuralLinkCommand>()
-        .RegisterCommand<RegisterOperatorCommand>()
-        .RegisterCommand<ExploreSectorCommand>()
-        .RegisterCommand<SubmitHackKeyCommand>()
-        .RegisterCommand<ScanSectorsCommand>()
-        .RegisterCommand<DismissErrorCommand>()
-        .RegisterCommand<DeployDroneCommand>());
+        .RegisterScreen<GamePlayScreen>()
+        .RegisterCommand<StartGameCommand>());
 ```
+</details>
 
-> **Note on data management and session recycling:**
+> **Note on data management and session disposal:**
 >
-> Since the `PixelTerminalUI` architecture is completely stateless, the framework core is completely isolated from the details of the database implementation and operates exclusively through the `ITerminalSessionRepository` contract abstraction. The `PixelTerminalUI.Persistence.Mongo` infrastructure plugin handles atomic management of `TerminalSessionEntity` entities under the protection of end-to-end optimistic locking (`Version`).
+> Since the `PixelTerminalUI` architecture is completely stateless, the framework core is completely isolated from the database implementation details and operates exclusively through the `ITerminalSessionRepository` contract abstraction. Infrastructure plugins handle atomic entity management under the protection of end-to-end optimistic locking (`Version`).
 >
-> To avoid overloading the .NET server with parasitic work, the cleaning strategy for stale sessions is completely delegated to the DBMS itself. On the MongoDB side, the `terminal_sessions` collection is assigned a standard built-in **TTL (Time-To-Live)** index for the `updatedAt` field (e.g., with a lifetime of 24 hours). The database automatically destroys expired sessions in an internal background thread, ensuring no memory leaks in the storage.
+> Initially, when integrating with MongoDB, the strategy for cleaning up stale sessions was delegated to the built-in **TTL (Time-To-Live)** index for the `updatedAt` field. However, due to the specifics of document storage, polymorphic trees of `TerminalScreen` widgets had to be stored in an isolated `active_screens` collection, which meant that automatic TTL deletion of the root session left child screens "orphaned." For PoC integration, this required running periodic background cleanup scripts (Cron/Worker) on the database side.
 >
-> It's worth making a disclaimer: since the current refactoring stores polymorphic trees of `TerminalScreen` widgets in an isolated `active_screens` collection to support complex navigation, automatic TTL deletion of the session document will leave these screens "orphaned." As part of the PoC integration with MongoDB, this issue is addressed by running a periodic background cleanup script (Cron/Worker) on the database side. However, this limitation is one of the key reasons why, in the target high-load architecture, the hot session state and double-buffered frame buffers are planned to be completely migrated to the high-performance Redis Key-Value store, where an atomic TTL timeout is applied out of the box to all associated keys.
+> Switching to a target architecture based on Redis Hash completely solved this problem natively. Since all related data for a single session (active screen, navigation history, frame buffer) resides within a single hash object under the shared key `session:{sessionId}`, the standard TTL mechanism in Redis automatically and atomically recycles the entire structure in a single step, guaranteeing a complete absence of memory leaks in the storage without writing background workers.
 
 ### 5. Rendering: StatelessRenderer
 
-The global singleton `StatelessRenderer` is responsible for transforming the screen's UI component tree into a flat representation. All the rendering logic is built on the concept of a **two-dimensional pixel buffer**, similar to patterns used in 2D game development. 
+The global singleton `StatelessRenderer` is responsible for transforming the form's UI component tree into a flat representation. All rendering logic is built on the concept of a **one-dimensional linear pixel buffer**, similar to low-level video memory patterns (Framebuffers).
 
-The renderer is a completely *Stateless* service: it does not store screen states internally, is unaware of network sessions, and performs a pure mathematical projection of the element graph onto the character grid in a single pass.
+The renderer is a completely *Stateless* service: it does not store screen state internally, is unaware of network sessions, and performs a pure mathematical projection of the element graph onto a flat segment of contiguous memory in a single pass, accepting the target buffer from outside the renderer.
 
 The frame generation process is structured as follows:
 * **Buffer Initialization:** The calling layer allocates a flat pixel array `Pixel[]` exactly equal to the total grid volume (`Width × Height`), and the renderer fills it with default space characters, recalculating the line offset using the formula `y * Width + x`.
@@ -733,15 +747,15 @@ As a result, the serialized JSON takes on the most compact form, representing a 
 
 ```json
 {
-"sessionId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-"screenBuffer": [
-2104832,
-2104832,
-2104832,
-...
-],
-"width": 40,
-"height": 12
+    "sessionId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "screenBuffer": [
+        2104832,
+        2104832,
+        2104832,
+        ...
+    ],
+    "width": 40,
+    "height": 12
 }
 ```
 
@@ -796,7 +810,7 @@ private TerminalResponse RenderAndBuildResponse(TerminalScreen screen)
 }
 ```
 
-##### Оптимизированный вариант реализации (с помощью буфера и `ArrayPool`):
+##### Optimized implementation (using a buffer and ArrayPool):
 ```csharp
 private TerminalResponse RenderAndBuildResponse(TerminalScreen screen)
 {
@@ -930,26 +944,113 @@ builder.Services.AddPixelTerminalUI(options =>
 });
 ```
 
-### Limitations, Trade-Offs, and the Cost of Solutions (Trade-Offs)
+### 7. Choosing a Storage Engine: Redis vs. MongoDB
 
-#### Shifting the Load to the DBMS
-The transition to a stateless architecture completely eliminated the RAM utilization issue on application servers, but shifted this load to the storage layer. Now, for every user input (click, scan), the engine is forced to perform a combination of read/write operations to the database.
+#### The Problem of Polymorphism and Type Discriminators: From MongoDB to Redis
 
-At the current system scale, MongoDB copes without problems thanks to its point indexes and microscopic state size (a few kilobytes per session). However, as the load increases tenfold, the database will inevitably become a bottleneck. This is a deliberate compromise: in production systems, hot state and double-buffered frame buffers should be immediately moved to ultra-fast key-value stores like Redis or KeyDB, leaving MongoDB as an archival repository.
+When migrating the session store from MongoDB to Redis, the key challenge was deserialization of abstract widgets and commands, which the Mongo driver handled out-of-the-box via the built-in `_t` (Type Discriminator) field.
 
-#### Historical Context: Why Not WebSockets + HTML/JS
-This project is an attempt to rethink the real-world background of large legacy WMS systems that emerged 15-20 years ago. Back then, there were no modern web stacks or powerful processors inside data collection terminals (DCTs). The hardware was weak, and the warehouse Wi-Fi between the shielded racks was constantly interrupted.
+To recreate this behavior in Redis and avoid polluting the isolated engine core with .NET infrastructure attributes, dynamic configuration was implemented via the contract modification mechanism (`DefaultJsonTypeInfoResolver`) built into `System.Text.Json`. At application startup, the plugin dynamically mixes the `$type` property with the name of a specific derived class directly into the JSON string, keeping the domain model clean and ensuring transparent polymorphic deserialization.
 
-Under these conditions, a custom-written Server-Driven UI (SDUI), returning ready-made pixel matrices to the client, was the only way to make the system work. The client application on the DCT remained "dumb" and as lightweight as possible; it didn't waste battery power parsing heavy HTML/JS and UI logic, and the server handled all the work (focus, validation, widget rendering). If the connection was lost, the "dumb" client instantly restored the image from where it was.
+```csharp
+private void ConfigurePolymorphism(JsonTypeInfo typeInfo)
+{
+    if (typeInfo.Type == typeof(TerminalScreen) && _screens.Count > 0)
+    {
+        typeInfo.PolymorphismOptions = CreateOptionsForTypes(_screens);
+    }
+    else if (typeInfo.Type == typeof(CommandBase) && _commands.Count > 0)
+    {
+        typeInfo.PolymorphismOptions = CreateOptionsForTypes(_commands);
+    }
+    else if (typeInfo.Type == typeof(TextWidget) && _widgets.Count > 0)
+    {
+        typeInfo.PolymorphismOptions = CreateOptionsForTypes(_widgets);
+    }
+}
+```
 
-In modern development of new systems from scratch, using TUI matrices is foolish when Flutter, WebSockets, or gRPC are available. However, as a tool for evolution and for rescuing existing legacy code, this approach is viable.
+#### Choosing a Data Structure in Redis (String vs. Hash)
 
-#### "Reinventing the wheel" (Bit Packing and a Custom Protocol)
-Bitwise compression of color, symbols, and flags into a single `uint` primitive, like developing a hybrid adaptive response builder, is an attempt to squeeze maximum performance out of the inherently imperfect architecture of text-based JSON.
+Since the ITerminalSessionRepository interface operates on three entities (the active screen, a specific screen by ID, and the historical rendering buffer), we faced a classic data structure dilemma when designing a Redis storage solution.
 
-Instead of completely changing the data exchange format to binary (for example, Protocol Buffers), the system tries to balance the performance within the text protocol. This is a classic tradeoff between readability (JSON is easy to debug in web interfaces) and traffic density at the network level.
+##### Option 1. Flat JSON (Redis String)
+The idea is to package the entire user session into a single monolithic JSON document and store it by the key `session:{sessionId}`.
+* **Problem:** High network stack and CPU overhead. Deleting just one screen from the navigation history would require us to read a gigantic JSON over the network (including the heavy terminal framebuffer array `uint[]`), deserialize it in C# memory, delete the element, re-serialize it, and send it back. In a Stateless BDUI engine, this would create unnecessary overhead.
+
+##### Option 2. Pivot Table (Redis Hash)
+An alternative is to use the Redis Hash data type. In this design, a single session is represented by a single dictionary object with the `session:{sessionId}` key, and the internal data is distributed across isolated independent fields.
+
+The hash field structure for a single session looks like this:
+
+| Field Name (Field) | Value Type | Field Description |
+| :--- | :--- | :--- |
+| `version` | Text / Number | Counter for optimistic locking (OCC) |
+| `active_screen_id` | Text (Guid) | Pointer to the ID of the currently active screen |
+| `historical_buffer` | Binary JSON | Serialized terminal frame rendering buffer |
+| `screen:{screenId}` | Binary JSON | Isolated document of a specific screen from the navigation history |
+
+##### Final Choice
+**Option 2 (Redis Hash)** was chosen for the repository implementation. This structure allowed for more precise operations. For example, the `RemoveScreenAsync` method now turns into an immediate call to the `HDEL session:{id} screen:{screenId}` command. We completely eliminated the need to read and rewrite the entire session by isolating work with screen history.
+
+#### Benchmark Results and Performance Analysis
+
+To validate the architectural transition from the MongoDB disk model to the lightweight Redis Hash in-memory model, measurements were taken using BenchmarkDotNet. We simulated the full session lifecycle of a terminal BDUI application: session creation, deep navigation through screen history, writing a heavy graphics framebuffer (uint[80 * 25]), selective reading of active components, and subsequent navigation stack cleanup.
+
+Below are the final benchmark results (AMD Ryzen 7 5700U processor in .NET 8):
+
+| Method                               | Mean      | Error     | StdDev    | Ratio | RatioSD | Rank | Gen0     | Allocated | Alloc Ratio |
+|------------------------------------- |----------:|----------:|----------:|------:|--------:|-----:|---------:|----------:|------------:|
+| RedisHash_FullSessionCycleSimulation |  8.102 ms | 0.1874 ms | 0.5526 ms |  0.34 |    0.02 |    1 |  31.2500 |  63.32 KB |        0.14 |
+| Mongo_FullSessionCycleSimulation     | 23.760 ms | 0.3746 ms | 0.3321 ms |  1.00 |    0.02 |    2 | 218.7500 | 465.18 KB |        1.00 |
+
+##### Why did Redis Hash demonstrate complete superiority?
+
+- **Execution Speed ​​(Mean):** Our Redis Hash-based repository executed the entire chain of operations **3 times faster** (8.1 ms vs. 23.7 ms). Since Redis stores all data structures exclusively in RAM and processes commands through a fast, non-blocking Event Loop, the overhead of network transactions and disk subsystem waits (which are present in MongoDB's WiredTiger engine) are completely absent.
+- **Memory Allocation (Allocated):** The heap memory allocation results are even more surprising—Redis Hash requires **7 times less memory** (63.32 KB vs. 465.18 KB). Under the hood, the MongoDB driver generates a huge number of intermediate `BsonDocument` objects, byte pools, and metadata for mapping. Moreover, when updating history arrays, Mongo is forced to traverse heavy structures entirely. In the Redis Hash implementation, we serialize JSON selectively and only for one specific screen. When calling removeScreenAsync, no memory allocations occur in the .NET heap—the HDEL command only sends a string key to the socket.
+- Garbage Collector (Gen0) Pressure: Reducing allocations will help reduce the frequency of first-generation garbage collector (Gen0) invocations by a factor of 7. For a Stateless BDUI engine processing hundreds of user terminal sessions per second, this is a critical metric, preventing micro-freezes (stop-the-world) during interface rendering.
+
+### Limitations, Tradeoffs, and Solution Costs (Trade-Offs)
+
+#### Shifting Load to the Transport Layer and Storage
+The transition to a Stateless architecture completely eliminated the RAM utilization issue within the application server itself (since we no longer store session state in the instance's RAM), but logically shifted this task to the storage layer. Now, for every user input (pressing Enter, initiating a scan), the engine performs a combination of read/write operations to the session repository.
+
+This is precisely why using classic document-oriented MongoDB seems less optimal for a hot UI state. As the benchmarks above show, the driver overhead of BSON parsing and constant full document rewrites creates significantly more memory allocations and takes longer to complete.
+
+Switching to an in-memory Redis Hash structure in this scenario appears to be a much more suitable and efficient solution. The numbers in the benchmark section clearly confirm that targeted hash field management can significantly reduce operation execution time and the load on the Garbage Collector.
+
+#### Fun Math: When Will Allocations Gobble Up Gigabytes?
+Nevertheless, even the optimized figure of **63.32 KB** for one full session cycle (creation, transitions, buffer write, and deletion) is a significant allocation on the .NET service side within a single transaction. For fun, we can estimate a hypothetical workload that would start consuming gigabytes of memory and evaluate whether the engine and Redis can handle it.
+
+* **Service Memory Consumption (.NET Heap Allocations):**
+Assuming the application processes a constant load of 1,000 RPS (requests per second), the total amount of memory allocated in the heap would be: 1,000 requests * 63.32 KB = 63.32 MB per second.
+In one minute of continuous operation, the Garbage Collector would be forced to process and recycle approximately 3.6 GB of garbage. In reality, this is quite manageable for a modern CLR within the Gen 0 generation, but on weaker cloud virtual machines, this could lead to increased latency due to garbage collection pauses.
+
+* **RAM consumption in Redis (In-Memory Storage):**
+Redis itself stores data in compressed binary form, and the net hash size of one active session is only about 5–8 KB (since the `uint[]` buffer is converted to a compact string, and screens contain minimal data). With 10,000 concurrent users (concurrent sessions), Redis will occupy RAM: `10,000 sessions * 8 KB = 80,000 KB`.
+A single-threaded Redis on a single CPU core will handle this load effortlessly, without even noticing the network traffic, since its performance limit for such operations is usually limited by the network card's bandwidth, not the CPU or RAM.
+
+Therefore, the bottleneck as the abstract load increases will be the intensity of allocations in C# during JSON serialization, not the performance of Redis itself. The current engine performance provides a huge safety margin, but as a next step in optimization, it would be interesting to explore the use of ArrayPool<uint> for the frame buffer or custom compact binary serializers.
+
+#### Historical context: why not WebSockets + HTML/JS
+This project is an attempt to rethink the real-world background of large legacy WMS systems that emerged 15-20 years ago. Back then, there were no modern web stacks or powerful processors inside data collection terminals (DCTs). The hardware was weak, and warehouse Wi-Fi was poor.
+
+Under these conditions, a custom-written server-driven UI, returning ready-made pixel matrices to the client, was the only way to make the system work. The client application on the mobile device remained "dumb" and as lightweight as possible; it didn't waste battery power parsing heavy HTML/JS and UI logic, while the server handled all the work (focus, validation, widget rendering). If the connection was lost, the "dumb" client instantly restored the image from the same point.
+
+In modern development of new systems from scratch, using TUI matrices is foolish when Flutter, WebSockets, or gRPC are available. However, as a tool for evolution and rescuing existing legacy code, this approach is viable.
+
+#### "Bicycle Building" (Bit Packing and a Custom Protocol)
+Bitwise compression of color, symbols, and flags into a single `uint` primitive, as well as the development of a hybrid adaptive response builder, are attempts to squeeze maximum performance out of the inherently imperfect architecture of text-based JSON.
+
+Instead of completely changing the data exchange format to binary (for example, Protocol Buffers), the system attempts to balance this within the text-based protocol. This is a classic tradeoff between readability (JSON is easy to debug in web interfaces) and traffic density at the network level.
 
 #### Applicability in Real Business
-Let's look at things pragmatically: implementing such an engine directly into a large warehouse or production facility is practically impossible. Existing business processes and legacy system codebases are so vast and intertwined that rewriting them for Stateless Rails would require colossal budgets and carry enormous risks of disrupting shipments.
+Let's look at things pragmatically: implementing such an engine head-on in a large warehouse or production facility is practically impossible. Existing business processes and the codebase of legacy systems are so vast and intertwined that rewriting them for Stateless Rails would require colossal budgets and carry enormous risks of process shutdowns.
 
-Therefore, PixelTerminalUI should be viewed not as a ready-made product for immediate migration to your production environment, but as a proof-of-concept (PoC). The project proves that even old, seemingly ineffective server-driven UI architectures can be significantly optimized for memory and bandwidth by applying modern .NET platform patterns (ArrayPool, Span<T>, bitmaps, and hybrid frame delivery).
+Therefore, `PixelTerminalUI` should be viewed not as a finished product for immediate production migration, but as a proof of concept (PoC). The project proves that even old, seemingly dead-end server-driven UI architectures can be significantly optimized for memory and bandwidth by applying modern .NET platform patterns (`ArrayPool`, `Span<T>`, bitmasks, and hybrid frame delivery).
+
+## Afterword: Why reinvent the wheel?
+
+Honestly, for me, `pixel-terminal-ui` is just another engineering sandbox. Before this, I had hundreds of other projects and thousands of commits, many of which now seem raw and naive to me. I fully understand that in two or three years, I'll look at this stateless engine and perhaps feel a little uneasy about some of the decisions I made. But that's precisely the essence of professional growth.
+
+This project is a consolidation of my current understanding of distributed systems architecture and memory limitations. It's a tangible bridge from how I thought yesterday to how I will design complex systems tomorrow.

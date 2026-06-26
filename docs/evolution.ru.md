@@ -631,22 +631,10 @@ builder.Services
     .AddTerminalRedisRepository(redisConnectionString)
     .WithSessionTimeout(TimeSpan.FromMinutes(30))
     .RegisterCustomScreens(custom => custom
-        // Регистрация экранов для корректной полиморфной JSON-сериализации
+        // Регистрация кастомных полиморфных экранов, команд и виджетов вашего приложения
         .RegisterScreen<WelcomeScreen>()
-        .RegisterScreen<CharacterCreationScreen>()
-        .RegisterScreen<SectorNavigationScreen>()
-        .RegisterScreen<TerminalHackScreen>()
-        .RegisterScreen<SectorScannerScreen>()
-        .RegisterScreen<DroneDeploymentScreen>()
-
-        // Регистрация Stateless-команд бизнес-логики
-        .RegisterCommand<ConnectNeuralLinkCommand>()
-        .RegisterCommand<RegisterOperatorCommand>()
-        .RegisterCommand<ExploreSectorCommand>()
-        .RegisterCommand<SubmitHackKeyCommand>()
-        .RegisterCommand<ScanSectorsCommand>()
-        .RegisterCommand<DismissErrorCommand>()
-        .RegisterCommand<DeployDroneCommand>());
+        .RegisterScreen<GamePlayScreen>()
+        .RegisterCommand<StartGameCommand>());
 ```
 
 <details>
@@ -661,19 +649,8 @@ builder.Services.AddMongoTerminalSessionRepository(
     "TheLostGridGameDb",
     custom => custom
         .RegisterScreen<WelcomeScreen>()
-        .RegisterScreen<CharacterCreationScreen>()
-        .RegisterScreen<SectorNavigationScreen>()
-        .RegisterScreen<TerminalHackScreen>()
-        .RegisterScreen<SectorScannerScreen>()
-        .RegisterScreen<DroneDeploymentScreen>()
-
-        .RegisterCommand<ConnectNeuralLinkCommand>()
-        .RegisterCommand<RegisterOperatorCommand>()
-        .RegisterCommand<ExploreSectorCommand>()
-        .RegisterCommand<SubmitHackKeyCommand>()
-        .RegisterCommand<ScanSectorsCommand>()
-        .RegisterCommand<DismissErrorCommand>()
-        .RegisterCommand<DeployDroneCommand>());
+        .RegisterScreen<GamePlayScreen>()
+        .RegisterCommand<StartGameCommand>());
 ```
 </details>
 
@@ -1068,7 +1045,7 @@ private void ConfigurePolymorphism(JsonTypeInfo typeInfo)
 Вместо того чтобы полностью менять формат обмена данными на бинарный (например, Protocol Buffers), система пытается балансировать внутри текстового протокола. Это классический компромисс между читаемостью (JSON легко отлаживать в веб-интерфейсах) и плотностью трафика на сетевом уровне.
 
 #### Применимость в реальном бизнесе
-Давайте смотреть на вещи прагматично: внедрить подобный движок в работающий крупный склад или производство "в лоб" практически невозможно. Существующие бизнес-процессы и кодовая база легаси-систем настолько огромны и переплетены, что их переписывание под Stateless-рельсы потребует колоссальных бюджетов и сопряжено с огромными рисками остановки отгрузок. 
+Давайте смотреть на вещи прагматично: внедрить подобный движок в работающий крупный склад или производство "в лоб" практически невозможно. Существующие бизнес-процессы и кодовая база легаси-систем настолько огромны и переплетены, что их переписывание под Stateless-рельсы потребует колоссальных бюджетов и сопряжено с огромными рисками остановки процессов.
 
 Поэтому `PixelTerminalUI` стоит рассматривать не как готовый продукт для немедленной миграции вашего продакшена, а как концептуальное инженерное исследование (PoC — Proof of Concept). Проект доказывает, что даже старые, казалось бы, тупиковые Server-Driven UI архитектуры можно существенно оптимизировать по памяти и трафику, применив современные паттерны платформы .NET (`ArrayPool`, `Span<T>`, битовые маски и гибридную доставку кадров).
 
