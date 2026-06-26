@@ -75,16 +75,34 @@ public sealed record WelcomeScreen : TerminalScreen
 
 ### 2. Зарегистрируйте компоненты в DI-контейнере
 
-Фреймворк предоставляет удобный Fluent API для подключения ядра рендеринга и распределенного репозитория сессий (например, на базе MongoDB):
+Фреймворк предоставляет удобный Fluent API для подключения ядра рендеринга и высокопроизводительного распределенного репозитория сессий на базе **Redis**:
 
 ```csharp
 var builder = WebApplication.CreateBuilder(args);
 
-// Инициализация ядра PixelTerminalUI
+// Инициализация ядра PixelTerminalUI и регистрация стартового экрана
 builder.Services.AddPixelTerminalUI();
 builder.Services.AddPixelTerminalStartup<WelcomeScreen>();
 
-// Подключение распределенного хранилища состояний интерфейса
+// Подключение целевого распределенного хранилища состояний на базе Redis Hash
+builder.Services.AddTerminalRedisRepository(
+    connectionString: "localhost:6379,abortConnect=false",
+    configureCustomScreens: resolver => 
+    {
+        // Регистрация кастомных полиморфных экранов, команд и виджетов вашего приложения
+        resolver
+            .RegisterScreen<WelcomeScreen>()
+            .RegisterScreen<GamePlayScreen>()
+            .RegisterCommand<StartGameCommand>();
+    });
+```
+
+<details>
+<summary>Альтернатива: Подключение MongoDB (для архивного или долгосрочного хранения)</summary>
+
+Если ваше приложение требует дисковой персистентности сессий, вы можете использовать альтернативный документо-ориентированный провайдер без изменения логики ядра:
+
+```csharp
 builder.Services.AddMongoUserSessionRepository(
     "mongodb://localhost:27017",
     "TerminalGameDb",
@@ -94,6 +112,7 @@ builder.Services.AddMongoUserSessionRepository(
         .RegisterCommand<StartGameCommand>()
 );
 ```
+</details>
 
 ---
 

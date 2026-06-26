@@ -75,7 +75,7 @@ public sealed record WelcomeScreen : TerminalScreen
 
 ### 2. Register Components in the DI Container
 
-The framework exposes a fluent API extensions layer to register the core stateless renderer and wire up the session repository state layer:
+The framework provides a convenient Fluent API to register the rendering core and a high-performance distributed session repository based on **Redis**:
 
 ```csharp
 var builder = WebApplication.CreateBuilder(args);
@@ -84,7 +84,25 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddPixelTerminalUI();
 builder.Services.AddPixelTerminalStartup<WelcomeScreen>();
 
-// Configure distributed user session state persistence inside MongoDB
+// Connecting a distributed state store based on Redis Hash
+builder.Services.AddTerminalRedisRepository(
+    connectionString: "localhost:6379,abortConnect=false",
+    configureCustomScreens: resolver => 
+    {
+        // Registering custom polymorphic screens, commands, and widgets for your app
+        resolver
+            .RegisterScreen<WelcomeScreen>()
+            .RegisterScreen<GamePlayScreen>()
+            .RegisterCommand<StartGameCommand>();
+    });
+```
+
+<details>
+<summary>Alternative: Connecting to MongoDB (for archival or long-term storage)</summary>
+
+If your application requires disk persistence of sessions, you can use an alternative document-oriented provider without changing the core logic:
+
+```csharp
 builder.Services.AddMongoUserSessionRepository(
     "mongodb://localhost:27017",
     "TerminalGameDb",
@@ -94,6 +112,7 @@ builder.Services.AddMongoUserSessionRepository(
         .RegisterCommand<StartGameCommand>()
 );
 ```
+</details>
 
 ---
 
