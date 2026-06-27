@@ -112,9 +112,9 @@ builder.Services.AddMongoUserSessionRepository(
 ```
 </details>
 
-## 🕹️ Demo Application and Quick Start
+## 🕹️ Demo Application
 
-To see the framework in action, you can run **The Lost Grid**—a text-based cyberpunk game written on top of `PixelTerminalUI`. It serves as a benchmark for designing real-world stateless applications.
+To see the framework in action, you can run **The Lost Grid** — a text-based cyberpunk game written on top of `PixelTerminalUI`. It serves as a benchmark for designing real-world stateless applications.
 
 * 📖 [Detailed analysis of the game architecture and gameplay mechanics](docs/the-lost-grid/README.ru.md)
 * 🖥️ **Server Part (API):** `examples/TheLostGrid.Server` — screen logic, commands, and validators.
