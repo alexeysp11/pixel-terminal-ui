@@ -1,8 +1,15 @@
-# 🌐 The Lost Grid: Cyberpunk TUI RPG Engine
+# 🎮 "The Lost Grid" Demo Game (Framework Testbed)
 
 [English](README.md) | [Русский](README.ru.md)
 
-Welcome to **The Lost Grid**, a hardcore text-based cyberpunk adventure running completely stateless over the PixelTerminalUI network wire protocol.
+**The Lost Grid** is an interactive cyberpunk text quest designed as a full-fledged demonstration of the capabilities and stress test of the architecture of the PixelTerminalUI framework.
+
+The main goal of this demo application is to demonstrate in action how the Stateless BDUI concept can be used to build complex, branching user scenarios without storing state on the application server.
+
+### What this project demonstrates to the developer:
+* **Integration with Redis Hash:** How user sessions and heavy double-buffered frame buffers are atomically distributed across version-protected hash fields (OCC).
+* **Single Input Drive Paradigm:** How complex UI elements (operator class selection, sector navigation, a hacking minigame) are assembled from just two basic widgets—a text label and a single input field.
+* **Business Logic Isolation:** How game commands (`CommandBase`) remain completely pure and don't know anything about pixel rendering or network transport details.
 
 ### 📝 The Lore & Story
 You are an **Operator**—a rogue cyber-archaeologist who just woke up inside the frozen directory of a long-abandoned, military-grade corporate mainframe known as *The Grid*. Your physical body is safely plugged into a cyber-deck somewhere in the neon slums, but your consciousness is trapped inside these low-level character sectors. 

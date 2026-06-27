@@ -112,17 +112,25 @@ builder.Services.AddMongoUserSessionRepository(
 ```
 </details>
 
-## 🐳 Quick Start in Docker
+## 🕹️ Demo Application and Quick Start
 
-You can launch the ready-made demo game and all the necessary infrastructure with a single command. The framework will automatically set up the engine core server, Redis, and a web interface for data inspection.
+To see the framework in action, you can run **The Lost Grid**—a text-based cyberpunk game written on top of `PixelTerminalUI`. It serves as a benchmark for designing real-world stateless applications.
+
+* 📖 [Detailed analysis of the game architecture and gameplay mechanics](docs/the-lost-grid/README.ru.md)
+* 🖥️ **Server Part (API):** `examples/TheLostGrid.Server` — screen logic, commands, and validators.
+* 📟 **Client Part (TUI):** `examples/TheLostGrid.Client` — a thin console client for rendering frames.
+
+### 🐳 Running in Docker
+
+You can deploy a ready-made demo game and all the necessary infrastructure with a single command. The framework will automatically set up the engine core server, a high-performance distributed Redis cache, and a user-friendly web control panel:
 
 ```bash
 docker compose up -d --build
 ```
 
 After successfully deploying the containers, the following local endpoints will be available:
-* 📑 **Swagger Server API:** `http://localhost:5221/swagger` — for sending commands and testing BDUI screen generation.
-* 🖥️ **Redis Commander Admin Panel:** `http://localhost:8082` — for visually analyzing the field structure within **Redis Hash** sessions in real time.
+* 📟 **Swagger Server API:** `http://localhost:5221/swagger` — for manually sending commands and testing the generation of BDUI screens.
+* 🖥️ **Redis Commander Panel:** `http://localhost:8082` — for visually analyzing the structure of fields within **Redis Hash** sessions in real time.
 
 ---
 
