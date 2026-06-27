@@ -13,31 +13,31 @@ The mainframe is dying, leaking corrupted data packets and guarded by rogue sub-
 * **Character Matrix Initialization:** Punch in your custom Operator Name and security cryptographic passkeys to securely commit your character sheet snapshot inside the MongoDB persistence layer.
 * **Sector Subnet Exploration:** Use lightweight text directional controls (`-n` for forward loops, `-b` to retreat out into parent node rooms) to safely navigate through non-linear terminal nodes matrices.
 * **Terminal Intrusion Sub-routines:** Trigger active terminal hacking sub-flows where fields enforce rigid `Required = true` security boundaries. 
-* **State-Machine Countermeasures:** Mainframe firewalls track your decryption attempts. Every failed crack mutates your bitwise `RawState` inside the session document. Run out of attempts, and the pipeline will mutate the session, erase the current form, and forcibly teleport the player to the `SecurityQuarantineForm` penalty screen (isolation). This is a deep network sector (a penal battalion), from which the player will have to escape through a series of complex, routine log clearing commands before returning to the main story.
+* **State-Machine Countermeasures:** Mainframe firewalls track your decryption attempts. Every failed crack mutates your bitwise `RawState` inside the session document. Run out of attempts, and the pipeline will mutate the session, erase the current form, and forcibly teleport the player to the `SecurityQuarantineScreen` penalty screen (isolation). This is a deep network sector (a penal battalion), from which the player will have to escape through a series of complex, routine log clearing commands before returning to the main story.
 
 ### 🖥️ What the game looks like on the TUI screen (Visual Snapshots)
 
-Snapshot 1: Main tactical screen (`SectorNavigationForm`)
+Snapshot 1: Main tactical screen (`SectorNavigationScreen`)
 ```
 |--------------------------------------|
-| SYSTEM: THE LOST GRID   [SEC: B-09]  | <- Simple TextControl
-| STATUS: OPERATOR CONSCIOUSNESS [94%] | <- Simple TextControl
+| SYSTEM: THE LOST GRID   [SEC: B-09]  | <- Simple TextWidget
+| STATUS: OPERATOR CONSCIOUSNESS [94%] | <- Simple TextWidget
 |--------------------------------------|
 | DESCRIPTION:                         |
-| You are inside a dark subnet node.   | <- Multiline TextControl
+| You are inside a dark subnet node.   | <- Multiline TextWidget
 | An offline databank glows nearby.    |
 |                                      |
 | CHOOSE NEXT ACTION CODE:             |
-| [1] Move Forward  [2] Access Memory  | <- Simple TextControl
+| [1] Move Forward  [2] Access Memory  | <- Simple TextWidget
 |                                      |
-| ACTION: [.....]                      | <- Active TextEditControl (Focus)
-| PROTOCOL: [     ]                    | <- Inactive TextEditControl
+| ACTION: [.....]                      | <- Active TextEntryWidget (Focus)
+| PROTOCOL: [     ]                    | <- Inactive TextEntryWidget
 |                                      |
 | ENTER ACTION CODE FROM THE LIST      | <- Global UPPERCASE Hint
 |--------------------------------------|
 ```
 
-Screenshot 2: Hack screen (`TerminalHackForm`)
+Screenshot 2: Hack screen (`TerminalHackScreen`)
 ```
 |--------------------------------------|
 | SECURITY INTERCEPT:COGNITIVE FIREWALL|
@@ -48,7 +48,7 @@ Screenshot 2: Hack screen (`TerminalHackForm`)
 | 0x9A1B: SYNC_ERROR                   |
 |                                      |
 | ENTER BYPASS ENCRYPTION KEYWORD:     |
-| KEYWORD: [.....]                     | <- Active TextEditControl (Focus)
+| KEYWORD: [.....]                     | <- Active TextEntryWidget (Focus)
 |                                      |
 |                                      |
 |                                      |
@@ -72,35 +72,35 @@ A hardware specialist whose consciousness literally fuses with machinery, tactic
 
 #### 🗺️ Approximate plot flow and twists:
 
-Step 1: `CharacterCreationForm` (Neurolink)
+Step 1: `CharacterCreationScreen` (Neurolink)
 - Action: The player registers the Operator name and password.
 - Plot start: The screen greets them with the words `OPERATOR CONSCIOUSNESS SYNCHRONIZED`. The mainframe believes them to be a legitimate Apex Corp employee who has come to clear the memory before shutting down the facility.
 
-Step 2: `SectorNavigationForm` (Subnet Hub)
+Step 2: `SectorNavigationScreen` (Subnet Hub)
 - Action: The form contains three controls. The player switches focus between them. The first control is "Scan ports," the second is "View remaining power cells." They select scan and find two nodes: Archive-Node and Security-Gate.
 
-Step 3: `ArchiveForm` (Intelligence Gathering)
-- Action: The player goes to the archive form. Using `ScrollMessageForm`, they read old employee logs. Focus jumps to a hidden field. By pressing Enter, the player finds a text fragment: "...the password for the main terminal is linked to the AI ​​launch date..." This is the first clue! The player presses `-b`, and focus smoothly returns to the Hub.
+Step 3: `ArchiveScreen` (Intelligence Gathering)
+- Action: The player goes to the archive form. Using `ScrollMessageScreen`, they read old employee logs. Focus jumps to a hidden field. By pressing Enter, the player finds a text fragment: "...the password for the main terminal is linked to the AI ​​launch date..." This is the first clue! The player presses `-b`, and focus smoothly returns to the Hub.
 
-Step 4: `TerminalHackForm` (Hack Point and Plot Twist!)
+Step 4: `TerminalHackScreen` (Hack Point and Plot Twist!)
 - Action: The player goes to Security-Gate. The firewall prompts for a passphrase. The player matches the clues from the archive. He has 3 attempts (`RawState = 3`).
 - Turn: If the player fails, the team's state machine decrements the counter. On the final attempt, the mainframe realizes the Operator is a spy. An alarm is triggered.
 
-Step 5: `SecurityQuarantineForm` (Quarantine/Penal Battalion)
+Step 5: `SecurityQuarantineScreen` (Quarantine/Penal Battalion)
 - Action: If the hack fails, the pipeline immediately wipes the game screen and teleports the player to an isolated quarantine sector. The `PurgeLogsCommand` command forces the player to manually enter service directives (`FLUSH`), fending off incoming security programs. After escaping quarantine, the player returns to the Hub, but with 20% health (the `Operator Consciousness` parameter).
 
-Step 6: `CoreDataForm` (Final)
+Step 6: `CoreDataScreen` (Final)
 - Action: The player returns, enters the correct key, and hacks the terminal. The mainframe opens access to the Central Core. - Connect: The backend replaces the form with the final victory screen, where a running line displays the corporation's secret file, for which the hack was started, and the flag `TerminateSession = true` disables the terminal, successfully completing the quest.
 
 #### ⏱️ How to implement a "Ticking Timer" without a jumping cursor?
 
 To prevent the user's cursor from jumping and the screen from redrawing every second (which looks terrible in the terminal console), we move time control to the backend using the request sending time:
 - The `DateTime? ActiveStepStartedAt` field is added to the session document in MongoDB.
-- When the player enters the dangerous TerminalHackForm form, the backend records the current time: `form.ActiveStepStartedAt = DateTime.UtcNow;`.
+- When the player enters the dangerous `TerminalHackScreen` form, the backend records the current time: `screen.ActiveStepStartedAt = DateTime.UtcNow;`.
 - The player has, for example, 30 seconds to solve the riddle. The player thinks, enters the code word, and presses `Enter`.
 - The `RequestPipelineHandler` pipeline wakes up, loads the form, and first checks the time difference:
 ```csharp
-TimeSpan elapsed = DateTime.UtcNow - form.ActiveStepStartedAt.Value;
+TimeSpan elapsed = DateTime.UtcNow - screen.ActiveStepStartedAt.Value;
 if (elapsed.TotalSeconds > 30)
 {
     // The player took too long to think! The defense systems were activated automatically.
@@ -118,4 +118,4 @@ if (elapsed.TotalSeconds > 30)
 To prevent the game from being a one-time use game, passwords and hints should be generated randomly at the start of the session (Cold Start).
 - We add the string fields `GeneratedPassword` and `ClueLocation` to the `UserSessionDocument` class (or command state).
 - During Cold Start, the backend selects a random word from the dictionary (e.g. `MATRIX`, `REBOOT`, `CYPHER`) and a random room for the hint.
-When a player enters the ArchiveForm, the renderer or command dynamically populates the TextControl.Value with the tooltip text generated specifically for this session. The screen template is the same, but its content is completely unique for each player.
+When a player enters the `ArchiveScreen`, the renderer or command dynamically populates the TextWidget.Value with the tooltip text generated specifically for this session. The screen template is the same, but its content is completely unique for each player.
