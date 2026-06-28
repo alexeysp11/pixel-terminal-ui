@@ -127,7 +127,11 @@ To see the framework in action, you can run **The Lost Grid** — a text-based c
 You can deploy a ready-made demo game and all the necessary infrastructure with a single command. The framework will automatically set up the engine core server, a high-performance distributed Redis cache, and a user-friendly web control panel:
 
 ```bash
+# 1. Start the core server and Redis cache with one command in the background
 docker compose up -d --build
+
+#2. Connect using a thin TUI client directly from the server console
+docker exec -it pixel_terminal_app env TERMINAL_SERVER_URL=http://localhost:8080 TERM=xterm-256color dotnet /app/client/TheLostGrid.Client.dll
 ```
 
 After successfully deploying the containers, the following local endpoints will be available:

@@ -127,7 +127,11 @@ builder.Services.AddMongoUserSessionRepository(
 Вы можете развернуть готовую демонстрационную игру и всю необходимую инфраструктуру одной командой. Фреймворк автоматически поднимет сервер ядра движка, высокопроизводительный распределенный кэш Redis и удобную веб-панель управления:
 
 ```bash
+# 1. Запустить сервер ядра и кэш Redis одной командой в фоне
 docker compose up -d --build
+
+# 2. Подключиться с помощью тонкого TUI-клиента прямо внутри консоли сервера
+docker exec -it pixel_terminal_app env TERMINAL_SERVER_URL=http://localhost:8080 TERM=xterm-256color dotnet /app/client/TheLostGrid.Client.dll
 ```
 
 После успешного развертывания контейнеров вам станут доступны следующие локальные точки:
