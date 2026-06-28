@@ -35,11 +35,10 @@ public sealed class RequestPipelineHandler(
     IStartupScreenFactory startupScreenFactory,
     ITerminalErrorScreenFactory errorScreenFactory,
     IAdaptiveResponseBuilder adaptiveResponseBuilder,
-    IScreenValidationProvider validationProvider) : IRequestPipelineHandler
+    IScreenValidationProvider validationProvider,
+    ISpecialSymbolHandler symbolHandler,
+    IFocusManager focusManager) : IRequestPipelineHandler
 {
-    private readonly SpecialSymbolHandler _symbolHandler = new();
-    private readonly FocusManager _focusManager = new();
-
     /// <inheritdoc/>
     public async Task<TerminalResponse> HandleInputAsync(TerminalRequest request)
     {
@@ -58,7 +57,7 @@ public sealed class RequestPipelineHandler(
         }
 
         // Evaluate systemic industrial terminal navigational special symbols
-        SymbolHandlingResult symbolResult = _symbolHandler.HandleSymbol(screen, request.UserInput);
+        SymbolHandlingResult symbolResult = symbolHandler.HandleSymbol(screen, request.UserInput);
 
         if (symbolResult.Action == SymbolResultActionType.TerminateSession)
         {
@@ -100,7 +99,7 @@ public sealed class RequestPipelineHandler(
 
         if (symbolResult.Action == SymbolResultActionType.ShiftFocusForward)
         {
-            screen.FocusedEntryWidgetId = _focusManager.GetNextFocus(screen);
+            screen.FocusedEntryWidgetId = focusManager.GetNextFocus(screen);
             await sessionRepository.SaveActiveScreenAsync(sessionId, screen);
             return await RenderAndBuildResponseAsync(screen);
         }
@@ -114,7 +113,7 @@ public sealed class RequestPipelineHandler(
                 focusedEntryWidget.Value = string.Empty;
             }
 
-            screen.FocusedEntryWidgetId = _focusManager.GetPreviousFocus(screen);
+            screen.FocusedEntryWidgetId = focusManager.GetPreviousFocus(screen);
             await sessionRepository.SaveActiveScreenAsync(sessionId, screen);
             return await RenderAndBuildResponseAsync(screen);
         }
@@ -174,7 +173,7 @@ public sealed class RequestPipelineHandler(
 
             if (screen.FocusedEntryWidgetId == entryWidget.Id)
             {
-                screen.FocusedEntryWidgetId = _focusManager.GetNextFocus(screen);
+                screen.FocusedEntryWidgetId = focusManager.GetNextFocus(screen);
             }
         }
         await sessionRepository.SaveActiveScreenAsync(sessionId, screen);

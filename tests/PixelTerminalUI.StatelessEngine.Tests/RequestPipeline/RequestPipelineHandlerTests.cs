@@ -8,11 +8,13 @@ using PixelTerminalUI.StatelessEngine.Commands.DismissError;
 using PixelTerminalUI.StatelessEngine.Extensions.ServiceCollectionExtensions;
 using PixelTerminalUI.StatelessEngine.Factories.StartupScreen;
 using PixelTerminalUI.StatelessEngine.Factories.TerminalErrorScreen;
+using PixelTerminalUI.StatelessEngine.Navigation;
 using PixelTerminalUI.StatelessEngine.Rendering.Core;
 using PixelTerminalUI.StatelessEngine.Repositories;
 using PixelTerminalUI.StatelessEngine.RequestPipeline;
 using PixelTerminalUI.StatelessEngine.ResponseBuilders;
 using PixelTerminalUI.StatelessEngine.Screens;
+using PixelTerminalUI.StatelessEngine.SymbolHandling;
 using PixelTerminalUI.StatelessEngine.Validators;
 using PixelTerminalUI.StatelessEngine.Validators.ValidationProviders;
 using PixelTerminalUI.StatelessEngine.Widgets;
@@ -27,6 +29,8 @@ public sealed class RequestPipelineHandlerTests
     private readonly Mock<ITerminalErrorScreenFactory> _errorScreenFactoryMock;
     private readonly Mock<IAdaptiveResponseBuilder> _adaptiveResponseBuilderMock = new();
     private readonly Mock<IScreenValidationProvider> _validationProviderMock = new();
+    private readonly Mock<ISpecialSymbolHandler> _specialSymbolHandlerMock = new();
+    private readonly Mock<IFocusManager> _focusManagerMock = new();
     private readonly PixelTerminalUIOptions _defaultOptions = new();
 
     private readonly RequestPipelineHandler _sut;
@@ -71,7 +75,9 @@ public sealed class RequestPipelineHandlerTests
             _startupScreenFactoryMock.Object,
             _errorScreenFactoryMock.Object,
             _adaptiveResponseBuilderMock.Object,
-            _validationProviderMock.Object);
+            _validationProviderMock.Object,
+            _specialSymbolHandlerMock.Object,
+            _focusManagerMock.Object);
     }
 
     [Fact]
@@ -242,7 +248,7 @@ public sealed class RequestPipelineHandlerTests
 
         _validationProviderMock
             .Setup(p => p.GetValidatorsForScreen("UsersScreen"))
-            .Returns(new ValidationDelegate[] { failingValidator });
+            .Returns([failingValidator]);
 
         // Настраиваем мок фабрики ошибок, чтобы избежать NullReferenceException
         _errorScreenFactoryMock
@@ -496,7 +502,9 @@ public sealed class RequestPipelineHandlerTests
             startupScreenFactoryMock.Object,
             _errorScreenFactoryMock.Object,
             adaptiveResponseBuilderMock.Object,
-            validationProviderMock.Object);
+            validationProviderMock.Object,
+            _specialSymbolHandlerMock.Object,
+            _focusManagerMock.Object);
 
         // Act
         TerminalResponse response = await sut.HandleInputAsync(request);
@@ -839,7 +847,9 @@ public sealed class RequestPipelineHandlerTests
             _startupScreenFactoryMock.Object,
             _errorScreenFactoryMock.Object,
             _adaptiveResponseBuilderMock.Object,
-            _validationProviderMock.Object);
+            _validationProviderMock.Object,
+            _specialSymbolHandlerMock.Object,
+            _focusManagerMock.Object);
 
         // Act
         TerminalResponse response = await handlerWithBuffering.HandleInputAsync(request);
@@ -893,7 +903,9 @@ public sealed class RequestPipelineHandlerTests
             _startupScreenFactoryMock.Object,
             _errorScreenFactoryMock.Object,
             _adaptiveResponseBuilderMock.Object,
-            _validationProviderMock.Object);
+            _validationProviderMock.Object,
+            _specialSymbolHandlerMock.Object,
+            _focusManagerMock.Object);
 
         // Act
         TerminalResponse response = await handlerWithoutBuffering.HandleInputAsync(request);

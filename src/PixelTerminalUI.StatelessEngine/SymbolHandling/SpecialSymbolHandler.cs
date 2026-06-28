@@ -5,44 +5,24 @@ namespace PixelTerminalUI.StatelessEngine.SymbolHandling;
 
 public sealed class SpecialSymbolHandler : ISpecialSymbolHandler
 {
-    private static List<TextWidget> GetSortedEditableWidgets(TerminalScreen screen)
-    {
-        List<TextWidget> editableWidgets = [];
-
-        // Filter out visible inputs using single-pass iteration to protect performance
-        foreach (TextWidget widget in screen.Widgets)
-        {
-            if (widget.Visible && (widget is TextEntryWidget || widget is PasswordEntryWidget))
-            {
-                editableWidgets.Add(widget);
-            }
-        }
-
-        // Sort execution mapping matrix by TabIndex, then Top rows, then Left columns
-        editableWidgets.Sort((TextWidget left, TextWidget right) =>
-        {
-            int leftTab = left.TabIndex ?? int.MaxValue;
-            int rightTab = right.TabIndex ?? int.MaxValue;
-            int tabCompare = leftTab.CompareTo(rightTab);
-            if (tabCompare != 0)
-            {
-                return tabCompare;
-            }
-
-            int topCompare = left.Top.CompareTo(right.Top);
-            if (topCompare != 0)
-            {
-                return topCompare;
-            }
-
-            return left.Left.CompareTo(right.Left);
-        });
-
-        return editableWidgets;
-    }
+    /// <summary>
+    /// Gets or sets an optional custom delegate to intercept specialized game or domain specific control sequences 
+    /// before the core engine executes standard terminal routing operations.
+    /// </summary>
+    public Func<TerminalScreen, string, SymbolHandlingResult>? CustomInterceptor { get; set; }
 
     public SymbolHandlingResult HandleSymbol(TerminalScreen screen, string userInput)
     {
+        // Execute the custom app-level interceptor if registered
+        if (CustomInterceptor is not null)
+        {
+            SymbolHandlingResult customResult = CustomInterceptor(screen, userInput);
+            if (customResult.Action != SymbolResultActionType.NotHandled)
+            {
+                return customResult;
+            }
+        }
+
         // Intercept global application termination request
         if (userInput == "-q")
         {
@@ -114,5 +94,41 @@ public sealed class SpecialSymbolHandler : ISpecialSymbolHandler
         }
 
         return SymbolHandlingResult.NotHandled();
+    }
+
+    private static List<TextWidget> GetSortedEditableWidgets(TerminalScreen screen)
+    {
+        List<TextWidget> editableWidgets = [];
+
+        // Filter out visible inputs using single-pass iteration to protect performance
+        foreach (TextWidget widget in screen.Widgets)
+        {
+            if (widget.Visible && (widget is TextEntryWidget || widget is PasswordEntryWidget))
+            {
+                editableWidgets.Add(widget);
+            }
+        }
+
+        // Sort execution mapping matrix by TabIndex, then Top rows, then Left columns
+        editableWidgets.Sort((TextWidget left, TextWidget right) =>
+        {
+            int leftTab = left.TabIndex ?? int.MaxValue;
+            int rightTab = right.TabIndex ?? int.MaxValue;
+            int tabCompare = leftTab.CompareTo(rightTab);
+            if (tabCompare != 0)
+            {
+                return tabCompare;
+            }
+
+            int topCompare = left.Top.CompareTo(right.Top);
+            if (topCompare != 0)
+            {
+                return topCompare;
+            }
+
+            return left.Left.CompareTo(right.Left);
+        });
+
+        return editableWidgets;
     }
 }

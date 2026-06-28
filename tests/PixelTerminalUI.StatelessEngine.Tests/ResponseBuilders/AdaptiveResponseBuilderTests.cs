@@ -165,8 +165,8 @@ public sealed class AdaptiveResponseBuilderTests
         Guid sessionId = Guid.NewGuid();
         int width = 0;
         int height = 0;
-        uint[] currentBuffer = new uint[] { };
-        uint[] historicalBuffer = new uint[] { };
+        uint[] currentBuffer = [];
+        uint[] historicalBuffer = [];
 
         // Act
         TerminalResponse response = _sut.Build(sessionId, currentBuffer, historicalBuffer, width, height);
@@ -190,8 +190,8 @@ public sealed class AdaptiveResponseBuilderTests
         Guid sessionId = Guid.NewGuid();
         int width = 2;
         int height = 1; // Expected cells count is 2
-        uint[] currentBuffer = new uint[] { 1, 2, 99, 99 };
-        uint[] historicalBuffer = new uint[] { 1, 2 }; // Historical buffer strictly matches the logical geometry shape
+        uint[] currentBuffer = [1, 2, 99, 99];
+        uint[] historicalBuffer = [1, 2]; // Historical buffer strictly matches the logical geometry shape
 
         // Act
         TerminalResponse response = _sut.Build(sessionId, currentBuffer, historicalBuffer, width, height);

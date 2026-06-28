@@ -16,7 +16,7 @@ public sealed class RegisterOperatorCommand : Command<SectorNavigationState>
         CharacterType characterType = ParseCharacterType(context.InputValue);
         if (characterType is CharacterType.None)
         {
-            context.ErrorMessage = "Incorrect character type!";
+            context.ErrorMessage = "INVALID CLASS! ENTER 'H' OR 'R'";
             return false;
         }
 
@@ -39,26 +39,24 @@ public sealed class RegisterOperatorCommand : Command<SectorNavigationState>
     /// <returns>A concrete <see cref="CharacterType"/> token if a matching signature is found; otherwise, <see cref="CharacterType.None"/>.</returns>
     private static CharacterType ParseCharacterType(string inputValue)
     {
-        if (inputValue == null)
+        if (string.IsNullOrWhiteSpace(inputValue))
         {
             return CharacterType.None;
         }
 
-        // Create zero-allocation structure view window over incoming text boundary context frame
+        // The operator class selection must strictly be a single character action identifier
         ReadOnlySpan<char> inputSpan = inputValue.AsSpan().Trim();
-
-        ReadOnlySpan<char> hackerSignature = "HACKER".AsSpan();
-        if (inputSpan.Equals(hackerSignature, StringComparison.OrdinalIgnoreCase))
+        if (inputSpan.Length != 1)
         {
-            return CharacterType.Hacker;
+            return CharacterType.None;
         }
 
-        ReadOnlySpan<char> riggerSignature = "RIGGER".AsSpan();
-        if (inputSpan.Equals(riggerSignature, StringComparison.OrdinalIgnoreCase))
+        char actionKey = char.ToUpperInvariant(inputSpan[0]);
+        return actionKey switch
         {
-            return CharacterType.Rigger;
-        }
-
-        return CharacterType.None;
+            'H' => CharacterType.Hacker,
+            'R' => CharacterType.Rigger,
+            _ => CharacterType.None
+        };
     }
 }

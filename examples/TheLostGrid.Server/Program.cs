@@ -10,6 +10,8 @@ using PixelTerminalUI.Persistence.Redis.Extensions.ServiceCollectionExtensions;
 using PixelTerminalUI.StatelessEngine.Commands.DismissError;
 using PixelTerminalUI.StatelessEngine.Extensions.ServiceCollectionExtensions;
 using PixelTerminalUI.StatelessEngine.Validators;
+using PixelTerminalUI.StatelessEngine.Screens;
+using PixelTerminalUI.StatelessEngine.SymbolHandling;
 
 namespace TheLostGrid.Server;
 
@@ -61,14 +63,29 @@ public sealed class Program
         builder.Services.AddScreenValidators(options =>
         {
             options.ForScreen(nameof(CharacterCreationScreen))
-                   .Add((screen, input) => input.Length > 10
-                       ? ValidationResult.Fail("Input exceeds limit!")
+                   .Add((screen, input) => input.Length > 15
+                       ? ValidationResult.Fail("OVERFLOW: Max 15 characters allowed!")
                        : ValidationResult.Success());
+        });
 
-            options.ForScreen(nameof(WelcomeScreen))
-                   .Add((screen, input) => input == "-m"
-                       ? ValidationResult.Fail("Menu is not available yet!")
-                       : ValidationResult.Success());
+        // Intercept and configure the singleton special symbol handler with game-specific macro routines
+        builder.Services.AddSingleton<ISpecialSymbolHandler>(provider =>
+        {
+            SpecialSymbolHandler handler = new()
+            {
+                CustomInterceptor = (TerminalScreen screen, string userInput) =>
+                {
+                    if (userInput == "-h")
+                    {
+                        return new SymbolHandlingResult
+                        {
+                            Action = SymbolResultActionType.StayOnScreen
+                        };
+                    }
+                    return SymbolHandlingResult.NotHandled();
+                }
+            };
+            return handler;
         });
 
         builder.Services.AddModuleEndpoints();
