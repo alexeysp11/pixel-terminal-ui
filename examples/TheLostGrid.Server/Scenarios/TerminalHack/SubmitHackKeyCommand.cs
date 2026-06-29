@@ -1,7 +1,6 @@
 ﻿using TheLostGrid.Server.Scenarios.SectorNavigation;
 using PixelTerminalUI.StatelessEngine.Commands.CommandContexts;
 using PixelTerminalUI.StatelessEngine.Commands.Core;
-using TheLostGrid.Server.Enums;
 
 namespace TheLostGrid.Server.Scenarios.TerminalHack;
 
@@ -13,21 +12,49 @@ public sealed class SubmitHackKeyCommand : Command<OneStepCommandState>
 
     public override async ValueTask<bool> ExecuteAsync(ICommandContext context)
     {
-        // Execute the allocation-free key validation inside a synchronous stack context block
-        if (!IsCorrectHackKey(context.InputValue))
+        if (context.Screen is not TerminalHackScreen originatingScreen)
         {
             return false;
         }
 
-        // Map structural state context out of the active running interface layout frame
-        CharacterType activeClass = CharacterType.Hacker;
-        if (context.Screen is TerminalHackScreen originatingScreen)
+        // Handle the successful bypass sequence layout route
+        if (IsCorrectHackKey(context.InputValue, originatingScreen.TargetHash))
         {
-            activeClass = originatingScreen.CharacterType;
+            int updatedEnergy = Math.Max(0, originatingScreen.Energy - 10);
+            int updatedCredits = originatingScreen.Credits + 30;
+
+            SectorNavigationScreen successHubScreen = new(originatingScreen.CharacterType, updatedEnergy, updatedCredits)
+            {
+                Id = Guid.NewGuid(),
+                Name = nameof(SectorNavigationScreen),
+                SessionId = context.SessionId,
+                ParentScreenId = context.Screen.Id
+            };
+
+            await context.SessionRepository.SaveActiveScreenAsync(context.SessionId, successHubScreen);
+            return true;
         }
 
-        // Successfully hacked! Route active terminal pointer back to sector navigation station hub
-        SectorNavigationScreen successHubScreen = new(activeClass)
+        // Evaluate the failed attempt operational branch context 
+        if (originatingScreen.AttemptsLeft > 1)
+        {
+            // The operative has remaining clearance attempts left within the network frame
+            TerminalHackScreen multiAttemptScreen = originatingScreen with
+            {
+                Id = Guid.NewGuid(),
+                Energy = Math.Max(0, originatingScreen.Energy - 15),
+                AttemptsLeft = originatingScreen.AttemptsLeft - 1
+            };
+
+            context.ErrorMessage = $"ACCESS DENIED! ATTEMPTS LEFT: {multiAttemptScreen.AttemptsLeft}";
+            await context.SessionRepository.SaveActiveScreenAsync(context.SessionId, multiAttemptScreen);
+            return false;
+        }
+
+        // Total exhaustion of system clearance credentials triggers critical failure routine redirection
+        int finalFailedEnergy = Math.Max(0, originatingScreen.Energy - 20);
+
+        SectorNavigationScreen failureHubScreen = new(originatingScreen.CharacterType, finalFailedEnergy, originatingScreen.Credits)
         {
             Id = Guid.NewGuid(),
             Name = nameof(SectorNavigationScreen),
@@ -35,19 +62,22 @@ public sealed class SubmitHackKeyCommand : Command<OneStepCommandState>
             ParentScreenId = context.Screen.Id
         };
 
-        await context.SessionRepository.SaveActiveScreenAsync(context.SessionId, successHubScreen);
+        context.ErrorMessage = "TERMINAL LOCKED: CRITICAL TRACE DETECTED!";
+        await context.SessionRepository.SaveActiveScreenAsync(context.SessionId, failureHubScreen);
+
         return true;
     }
 
-    private static bool IsCorrectHackKey(string inputValue)
+    private static bool IsCorrectHackKey(string userInput, string targetHash)
     {
-        if (inputValue == null)
+        if (userInput == null)
         {
             return false;
         }
 
-        ReadOnlySpan<char> inputSpan = inputValue.AsSpan().Trim();
-        ReadOnlySpan<char> correctKey = "OVERRIDE".AsSpan();
-        return inputSpan.Equals(correctKey, StringComparison.OrdinalIgnoreCase);
+        ReadOnlySpan<char> inputSpan = userInput.AsSpan().Trim();
+        ReadOnlySpan<char> targetSpan = targetHash.AsSpan();
+
+        return inputSpan.Equals(targetSpan, StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -14,13 +14,19 @@ public sealed class RegisterOperatorCommand : Command<SectorNavigationState>
     public override async ValueTask<bool> ExecuteAsync(ICommandContext context)
     {
         CharacterType characterType = ParseCharacterType(context.InputValue);
+
         if (characterType is CharacterType.None)
         {
             context.ErrorMessage = "INVALID CLASS! ENTER 'H' OR 'R'";
             return false;
         }
 
-        SectorNavigationScreen nextScreen = new(characterType)
+        // Establish the default operational parameters for the initial system bootstrap cycle
+        int initialEnergy = 100;
+        int initialCredits = 50;
+
+        // Instantiate the hub form passing the initial operational parameters directly into the constructor
+        SectorNavigationScreen nextScreen = new(characterType, initialEnergy, initialCredits)
         {
             Id = Guid.NewGuid(),
             Name = nameof(SectorNavigationScreen),
@@ -28,7 +34,9 @@ public sealed class RegisterOperatorCommand : Command<SectorNavigationState>
             SessionId = context.SessionId
         };
 
+        // Persist the initial screen model into the storage engine repository layer
         await context.SessionRepository.SaveActiveScreenAsync(context.SessionId, nextScreen);
+
         return true;
     }
 

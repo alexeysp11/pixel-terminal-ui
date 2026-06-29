@@ -19,10 +19,16 @@ public sealed class ExploreSectorCommand : Command<SectorNavigationState>
 
     public override async ValueTask<bool> ExecuteAsync(ICommandContext context)
     {
+        if (context.Screen is not SectorNavigationScreen currentHubScreen)
+        {
+            return false;
+        }
+
         int chosenRoute = ParseNavigationOption(context.InputValue);
 
         if (chosenRoute == 0)
         {
+            context.ErrorMessage = "INVALID OPTION! SELECT 1 OR 2";
             return false;
         }
 
@@ -31,18 +37,51 @@ public sealed class ExploreSectorCommand : Command<SectorNavigationState>
         {
             if (CharacterType == CharacterType.Hacker)
             {
-                nextScreen = new TerminalHackScreen()
+                // Enforce minimum required operational baseline before triggering the network penetration link
+                if (currentHubScreen.Energy < 10)
+                {
+                    context.ErrorMessage = "NOT ENOUGH ENERGY (10 ENG REQUIRED)";
+                    return false;
+                }
+
+                // Statelessly generate three unique cybernetic cryptography keys derived from localized system strings
+                string[] activeHashes = [
+                    Guid.NewGuid().ToString("N")[..8].ToUpperInvariant(),
+                    Guid.NewGuid().ToString("N")[..8].ToUpperInvariant(),
+                    Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()
+                ];
+
+                // Designate the very first randomized matrix array sequence index as the primary access token
+                string targetHash = activeHashes[0];
+
+                // Scramble the visual presentation sequence order so the correct option index isn't deterministic
+                Random.Shared.Shuffle(activeHashes);
+
+                int defaultAttempts = 2;
+
+                nextScreen = new TerminalHackScreen(
+                    CharacterType,
+                    currentHubScreen.Energy,
+                    currentHubScreen.Credits,
+                    defaultAttempts,
+                    targetHash,
+                    activeHashes)
                 {
                     Id = Guid.NewGuid(),
                     Name = nameof(TerminalHackScreen),
-                    CharacterType = CharacterType,
                     SessionId = context.SessionId,
                     ParentScreenId = context.Screen.Id
                 };
             }
             else
             {
-                nextScreen = new DroneDeploymentScreen()
+                if (currentHubScreen.Energy < 10)
+                {
+                    context.ErrorMessage = "NOT ENOUGH ENERGY (10 ENG REQUIRED)";
+                    return false;
+                }
+
+                nextScreen = new DroneDeploymentScreen(CharacterType, currentHubScreen.Energy, currentHubScreen.Credits)
                 {
                     Id = Guid.NewGuid(),
                     Name = nameof(DroneDeploymentScreen),
@@ -54,6 +93,13 @@ public sealed class ExploreSectorCommand : Command<SectorNavigationState>
         }
         else
         {
+            if (currentHubScreen.Energy < 30)
+            {
+                context.ErrorMessage = "NOT ENOUGH ENERGY (30 ENG REQUIRED)";
+                return false;
+            }
+
+            // TODO: Update when SectorScannerScreen constructor contracts are formalized with resource state tracking
             nextScreen = new SectorScannerScreen()
             {
                 Id = Guid.NewGuid(),
@@ -86,3 +132,4 @@ public sealed class ExploreSectorCommand : Command<SectorNavigationState>
         return 0;
     }
 }
+

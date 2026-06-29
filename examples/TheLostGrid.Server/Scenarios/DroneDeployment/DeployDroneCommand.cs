@@ -10,7 +10,9 @@ namespace TheLostGrid.Server.Scenarios.DroneDeployment;
 public sealed class DeployDroneCommand : Command<DroneDeploymentState>
 {
     public override Guid Id { get; } = Guid.NewGuid();
+
     public override Guid WidgetId { get; set; }
+
     public override DroneDeploymentState State { get; set; } = DroneDeploymentState.AwaitingCommand;
 
     public required CharacterType CharacterType { get; init; }
@@ -22,6 +24,11 @@ public sealed class DeployDroneCommand : Command<DroneDeploymentState>
             return false;
         }
 
+        if (context.Screen is not DroneDeploymentScreen operationalScreen)
+        {
+            return false;
+        }
+
         switch (State)
         {
             case DroneDeploymentState.AwaitingCommand:
@@ -29,19 +36,47 @@ public sealed class DeployDroneCommand : Command<DroneDeploymentState>
 
                 if (actionCode == -1)
                 {
-                    // Invalid telemetry input directive triggers validation layout fallback
+                    context.ErrorMessage = "INVALID OPTION! SELECT 1 OR 0";
                     return false;
                 }
 
                 TerminalScreen nextScreen;
-
                 if (actionCode == 1)
                 {
-                    // Route to the shared SectorScannerScreen screen layout
+                    // Enforce minimum resource verification limits before spawning a physical drone hardware component
+                    if (operationalScreen.Energy < 10)
+                    {
+                        context.ErrorMessage = "NOT ENOUGH ENERGY (10 ENG REQUIRED)";
+                        return false;
+                    }
+
+                    // Simulate drone deployment risk evaluation via cryptographic network layers roll calculations
+                    int successRoll = Random.Shared.Next(1, 101);
+                    bool isDeploymentSuccessful = successRoll <= 70;
+
+                    int updatedEnergy;
+                    int updatedCredits;
+                    string resultMessage;
+
+                    if (isDeploymentSuccessful)
+                    {
+                        updatedEnergy = Math.Max(0, operationalScreen.Energy - 10);
+                        updatedCredits = operationalScreen.Credits + 15;
+                        resultMessage = "SUCCESS: ARTIFACT EXTRACTED! +15 CR";
+                    }
+                    else
+                    {
+                        // Total hardware collision destruction triggers increased operational energy mitigation costs
+                        updatedEnergy = Math.Max(0, operationalScreen.Energy - 20);
+                        updatedCredits = operationalScreen.Credits;
+                        resultMessage = "CRITICAL: DRONE DESTROYED BY TURRETS!";
+                    }
+
+                    // TODO: Update when SectorScannerScreen constructor is formalized to accept energy, credits and text logs
                     nextScreen = new SectorScannerScreen()
                     {
                         Id = Guid.NewGuid(),
-                        Name = "SectorScannerScreen",
+                        Name = nameof(SectorScannerScreen),
                         CharacterType = CharacterType,
                         SessionId = context.SessionId,
                         ParentScreenId = context.Screen.Id
@@ -49,20 +84,14 @@ public sealed class DeployDroneCommand : Command<DroneDeploymentState>
                 }
                 else
                 {
-                    // Route 0: Safe disconnection, return back to SectorNavigationScreen (Hub)
-                    nextScreen = new SectorNavigationScreen(CharacterType)
+                    // Unconditional safe navigation retreat route back to the sector navigation command post
+                    nextScreen = new SectorNavigationScreen(CharacterType, operationalScreen.Energy, operationalScreen.Credits)
                     {
                         Id = Guid.NewGuid(),
                         Name = nameof(SectorNavigationScreen),
                         SessionId = context.SessionId,
                         ParentScreenId = context.Screen.Id
                     };
-
-                    // Access the context's current screen securely via state mapping to re-inject character type properties
-                    if (context.Screen is DroneDeploymentScreen operationalScreen)
-                    {
-                        // In real flow, exploreCommand inside nextScreen would accept this property to maintain loop state consistency
-                    }
                 }
 
                 await context.SessionRepository.SaveActiveScreenAsync(context.SessionId, nextScreen);
@@ -73,9 +102,6 @@ public sealed class DeployDroneCommand : Command<DroneDeploymentState>
         }
     }
 
-    /// <summary>
-    /// Evaluates raw stream signals using zero-allocation ref-struct processing windows.
-    /// </summary>
     private static int ParseDroneAction(string inputValue)
     {
         if (inputValue == null)
@@ -84,14 +110,17 @@ public sealed class DeployDroneCommand : Command<DroneDeploymentState>
         }
 
         ReadOnlySpan<char> inputSpan = inputValue.AsSpan().Trim();
+
         if (inputSpan.Equals("1".AsSpan(), StringComparison.Ordinal))
         {
             return 1;
         }
+
         if (inputSpan.Equals("0".AsSpan(), StringComparison.Ordinal))
         {
             return 0;
         }
+
         return -1;
     }
 }
