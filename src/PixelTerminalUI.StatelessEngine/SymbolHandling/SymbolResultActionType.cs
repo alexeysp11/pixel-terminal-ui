@@ -46,5 +46,11 @@ public enum SymbolResultActionType
     /// Commands the request execution pipeline to bypass further global structural macro handling 
     /// but immediately invoke the concrete business logic payload execution bound to the currently focused text input widget.
     /// </summary>
-    ExecuteCommand
+    ExecuteCommand,
+
+    /// <summary>
+    /// Instructs the request execution pipeline that the active layout state has been externally mutated 
+    /// within the persistence repository layer, forcing a complete reload of the screen from cache before redrawing the viewport.
+    /// </summary>
+    RefreshActiveScreen
 }

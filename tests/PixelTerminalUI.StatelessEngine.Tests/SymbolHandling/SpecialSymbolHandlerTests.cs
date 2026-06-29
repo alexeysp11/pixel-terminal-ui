@@ -9,14 +9,14 @@ namespace PixelTerminalUI.StatelessEngine.Tests.SymbolHandling;
 public sealed class SpecialSymbolHandlerTests
 {
     [Fact]
-    public void HandleSymbol_WithQuitCommand_ShouldReturnTerminateSessionAction()
+    public async Task HandleSymbol_WithQuitCommand_ShouldReturnTerminateSessionAction()
     {
         // Arrange
         SpecialSymbolHandler handler = new();
         SimpleMessageScreen screen = new() { Id = Guid.NewGuid(), SessionId = Guid.NewGuid(), Name = "SimpleMessage", Widgets = [] };
 
         // Act
-        SymbolHandlingResult result = handler.HandleSymbol(screen, "-q");
+        SymbolHandlingResult result = await handler.HandleSymbolAsync(screen, "-q");
 
         // Assert
         result.Action
@@ -28,7 +28,7 @@ public sealed class SpecialSymbolHandlerTests
     }
 
     [Fact]
-    public void HandleSymbol_WithResetCommand_ShouldWipeActiveWidgetValueAndStayOnScreen()
+    public async Task HandleSymbol_WithResetCommand_ShouldWipeActiveWidgetValueAndStayOnScreen()
     {
         // Arrange
         SpecialSymbolHandler handler = new();
@@ -52,7 +52,7 @@ public sealed class SpecialSymbolHandlerTests
         };
 
         // Act
-        SymbolHandlingResult result = handler.HandleSymbol(screen, "-r");
+        SymbolHandlingResult result = await handler.HandleSymbolAsync(screen, "-r");
 
         // Assert
         activeWidget.Value
@@ -65,14 +65,14 @@ public sealed class SpecialSymbolHandlerTests
     }
 
     [Fact]
-    public void HandleSymbol_WithBackwardCommand_ShouldReturnShiftFocusBackwardAction()
+    public async Task HandleSymbol_WithBackwardCommand_ShouldReturnShiftFocusBackwardAction()
     {
         // Arrange
         SpecialSymbolHandler handler = new();
         SimpleMessageScreen screen = new() { Id = Guid.NewGuid(), SessionId = Guid.NewGuid(), Name = "SimpleMessage", Widgets = [] };
 
         // Act
-        SymbolHandlingResult result = handler.HandleSymbol(screen, "-b");
+        SymbolHandlingResult result = await handler.HandleSymbolAsync(screen, "-b");
 
         // Assert
         result.Action
@@ -81,7 +81,7 @@ public sealed class SpecialSymbolHandlerTests
     }
 
     [Fact]
-    public void HandleSymbol_WithRequiredEmptyInput_ShouldBlockTransitAndStayOnScreen()
+    public async Task HandleSymbol_WithRequiredEmptyInput_ShouldBlockTransitAndStayOnScreen()
     {
         // Arrange
         SpecialSymbolHandler handler = new();
@@ -106,7 +106,7 @@ public sealed class SpecialSymbolHandlerTests
         };
 
         // Act: Simulating user sending empty enter string over the wire
-        SymbolHandlingResult result = handler.HandleSymbol(screen, string.Empty);
+        SymbolHandlingResult result = await handler.HandleSymbolAsync(screen, string.Empty);
 
         // Assert
         result.Action
@@ -115,14 +115,14 @@ public sealed class SpecialSymbolHandlerTests
     }
 
     [Fact]
-    public void HandleSymbol_WithStandardInput_ShouldReturnNotHandledAction()
+    public async Task HandleSymbol_WithStandardInput_ShouldReturnNotHandledAction()
     {
         // Arrange
         SpecialSymbolHandler handler = new();
         SimpleMessageScreen screen = new() { Id = Guid.NewGuid(), SessionId = Guid.NewGuid(), Name = "SimpleMessage", Widgets = [] };
 
         // Act
-        SymbolHandlingResult result = handler.HandleSymbol(screen, "123456789");
+        SymbolHandlingResult result = await handler.HandleSymbolAsync(screen, "123456789");
 
         // Assert
         result.Action
@@ -131,14 +131,14 @@ public sealed class SpecialSymbolHandlerTests
     }
 
     [Fact]
-    public void HandleSymbol_WithExplicitForwardCommand_ShouldReturnShiftFocusForwardAction()
+    public async Task HandleSymbol_WithExplicitForwardCommand_ShouldReturnShiftFocusForwardAction()
     {
         // Arrange
         SpecialSymbolHandler handler = new();
         SimpleMessageScreen screen = new() { Id = Guid.NewGuid(), SessionId = Guid.NewGuid(), Name = "SimpleMessage", Widgets = [] };
 
         // Act
-        SymbolHandlingResult result = handler.HandleSymbol(screen, "-n");
+        SymbolHandlingResult result = await handler.HandleSymbolAsync(screen, "-n");
 
         // Assert
         result.Action
@@ -147,7 +147,7 @@ public sealed class SpecialSymbolHandlerTests
     }
 
     [Fact]
-    public void HandleSymbol_WithRequiredFieldHavingValue_ShouldAllowTransitAndShiftFocusForward()
+    public async Task HandleSymbol_WithRequiredFieldHavingValue_ShouldAllowTransitAndShiftFocusForward()
     {
         // Arrange
         SpecialSymbolHandler handler = new();
@@ -172,7 +172,7 @@ public sealed class SpecialSymbolHandlerTests
         };
 
         // Act: Simulating user sending empty enter string over the wire to advance
-        SymbolHandlingResult result = handler.HandleSymbol(screen, string.Empty);
+        SymbolHandlingResult result = await handler.HandleSymbolAsync(screen, string.Empty);
 
         // Assert
         result.Action
@@ -181,7 +181,7 @@ public sealed class SpecialSymbolHandlerTests
     }
 
     [Fact]
-    public void HandleSymbol_WhenScreenHasNoActiveFocusedWidgetId_ShouldFallbackToSafeNotHandledAction()
+    public async Task HandleSymbol_WhenScreenHasNoActiveFocusedWidgetId_ShouldFallbackToSafeNotHandledAction()
     {
         // Arrange
         SpecialSymbolHandler handler = new();
@@ -196,7 +196,7 @@ public sealed class SpecialSymbolHandlerTests
         };
 
         // Act
-        SymbolHandlingResult result = handler.HandleSymbol(screen, "-r");
+        SymbolHandlingResult result = await handler.HandleSymbolAsync(screen, "-r");
 
         // Assert
         result.Action
@@ -205,7 +205,7 @@ public sealed class SpecialSymbolHandlerTests
     }
 
     [Fact]
-    public void HandleSymbol_WithBackwardCommand_WhenAtMiddleWidget_ShouldReturnShiftFocusBackward()
+    public async Task HandleSymbol_WithBackwardCommand_WhenAtMiddleWidget_ShouldReturnShiftFocusBackward()
     {
         // Arrange
         SpecialSymbolHandler handler = new();
@@ -226,7 +226,7 @@ public sealed class SpecialSymbolHandlerTests
         };
 
         // Act
-        SymbolHandlingResult result = handler.HandleSymbol(screen, "-b");
+        SymbolHandlingResult result = await handler.HandleSymbolAsync(screen, "-b");
 
         // Assert: It should stay within the screen and move focus to widget A
         result.Action
@@ -235,7 +235,7 @@ public sealed class SpecialSymbolHandlerTests
     }
 
     [Fact]
-    public void HandleSymbol_WithBackwardCommand_WhenAtFirstWidget_ShouldReturnNavigateToParentScreen()
+    public async Task HandleSymbol_WithBackwardCommand_WhenAtFirstWidget_ShouldReturnNavigateToParentScreen()
     {
         // Arrange
         SpecialSymbolHandler handler = new();
@@ -257,7 +257,7 @@ public sealed class SpecialSymbolHandlerTests
         };
 
         // Act
-        SymbolHandlingResult result = handler.HandleSymbol(screen, "-b");
+        SymbolHandlingResult result = await handler.HandleSymbolAsync(screen, "-b");
 
         // Assert: It should trigger a full pop action back onto the parent screen layout context
         result.Action
@@ -266,7 +266,7 @@ public sealed class SpecialSymbolHandlerTests
     }
 
     [Fact]
-    public void HandleSymbol_ShouldReturnNotHandled_WhenInputFieldHasAnAttachedCommand()
+    public async Task HandleSymbol_ShouldReturnNotHandled_WhenInputFieldHasAnAttachedCommand()
     {
         // Arrange
         SpecialSymbolHandler handler = new();
@@ -298,7 +298,7 @@ public sealed class SpecialSymbolHandlerTests
         string emptyUserInput = string.Empty;
 
         // Act
-        SymbolHandlingResult result = handler.HandleSymbol(screen, emptyUserInput);
+        SymbolHandlingResult result = await handler.HandleSymbolAsync(screen, emptyUserInput);
 
         // Assert
         result.Action

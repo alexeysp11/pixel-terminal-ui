@@ -51,4 +51,12 @@ public readonly record struct SymbolHandlingResult
     /// <returns>A validated evaluation state configured with destructive session truncation data parameters.</returns>
     public static SymbolHandlingResult TerminateSession(string message) =>
         new() { Action = SymbolResultActionType.TerminateSession, CustomMessage = message };
+
+    /// <summary>
+    /// Creates a structural outcome record commanding the processing pipeline loop to discard its current in-memory screen instance, 
+    /// fetch the latest serialized snapshot from the persistence layer, and execute a comprehensive presentation redraw.
+    /// </summary>
+    /// <returns>A validated evaluation state configured with the persistent state reload and refresh execution routing directive.</returns>
+    public static SymbolHandlingResult RefreshActiveScreen() =>
+        new() { Action = SymbolResultActionType.RefreshActiveScreen };
 }

@@ -10,8 +10,9 @@ using PixelTerminalUI.Persistence.Redis.Extensions.ServiceCollectionExtensions;
 using PixelTerminalUI.StatelessEngine.Commands.DismissError;
 using PixelTerminalUI.StatelessEngine.Extensions.ServiceCollectionExtensions;
 using PixelTerminalUI.StatelessEngine.Validators;
-using PixelTerminalUI.StatelessEngine.Screens;
 using PixelTerminalUI.StatelessEngine.SymbolHandling;
+using TheLostGrid.Server.Infrastructure;
+using TheLostGrid.Server.Scenarios.Help;
 
 namespace TheLostGrid.Server;
 
@@ -43,6 +44,7 @@ public sealed class Program
             .WithSessionTimeout(TimeSpan.FromMinutes(30))
             .RegisterCustomScreens(custom => custom
                 // Screens registration
+                .RegisterScreen<HelpScreen>()
                 .RegisterScreen<WelcomeScreen>()
                 .RegisterScreen<CharacterCreationScreen>()
                 .RegisterScreen<SectorNavigationScreen>()
@@ -51,6 +53,7 @@ public sealed class Program
                 .RegisterScreen<DroneDeploymentScreen>()
 
                 // Commands registration
+                .RegisterCommand<DismissHelpCommand>()
                 .RegisterCommand<ConnectNeuralLinkCommand>()
                 .RegisterCommand<RegisterOperatorCommand>()
                 .RegisterCommand<ExploreSectorCommand>()
@@ -71,19 +74,11 @@ public sealed class Program
         // Intercept and configure the singleton special symbol handler with game-specific macro routines
         builder.Services.AddSingleton<ISpecialSymbolHandler>(provider =>
         {
+            IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
+            GameplayInputInterceptor interceptor = new(scopeFactory);
             SpecialSymbolHandler handler = new()
             {
-                CustomInterceptor = (TerminalScreen screen, string userInput) =>
-                {
-                    if (userInput == "-h")
-                    {
-                        return new SymbolHandlingResult
-                        {
-                            Action = SymbolResultActionType.StayOnScreen
-                        };
-                    }
-                    return SymbolHandlingResult.NotHandled();
-                }
+                CustomInterceptor = interceptor.InterceptSymbolsAsync
             };
             return handler;
         });

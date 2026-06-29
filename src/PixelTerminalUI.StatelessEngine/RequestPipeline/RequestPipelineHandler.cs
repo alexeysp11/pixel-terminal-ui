@@ -1,4 +1,5 @@
 ﻿using System.Buffers;
+using Microsoft.Extensions.Logging;
 using PixelTerminalUI.Contracts.Common;
 using PixelTerminalUI.Contracts.Dto;
 using PixelTerminalUI.Contracts.Optimizations;
@@ -29,6 +30,7 @@ namespace PixelTerminalUI.StatelessEngine.RequestPipeline;
 /// <param name="adaptiveResponseBuilder">The pure functional matrix difference computation utility used to branch transport packets based on change density threshold ratios.</param>
 /// <param name="validationProvider">The dynamic registry repository storing screen-specific stateless verification constraints.</param>
 public sealed class RequestPipelineHandler(
+    ILogger<RequestPipelineHandler> logger,
     PixelTerminalUIOptions options,
     IStatelessRenderer renderer,
     ITerminalSessionRepository sessionRepository,
@@ -42,142 +44,161 @@ public sealed class RequestPipelineHandler(
     /// <inheritdoc/>
     public async Task<TerminalResponse> HandleInputAsync(TerminalRequest request)
     {
-        TerminalScreen? screen = null;
-        if (request.SessionId.HasValue)
+        try
         {
-            screen = await sessionRepository.GetActiveScreenAsync(request.SessionId.Value);
-        }
+            TerminalScreen? screen = null;
+            if (request.SessionId.HasValue)
+            {
+                screen = await sessionRepository.GetActiveScreenAsync(request.SessionId.Value);
+            }
 
-        Guid sessionId = request.SessionId ?? Guid.NewGuid();
-        if (screen is null)
-        {
-            screen = startupScreenFactory.CreateScreen(sessionId);
-            await sessionRepository.SaveActiveScreenAsync(sessionId, screen);
-            return await RenderAndBuildResponseAsync(screen);
-        }
+            Guid sessionId = request.SessionId ?? Guid.NewGuid();
+            if (screen is null)
+            {
+                screen = startupScreenFactory.CreateScreen(sessionId);
+                await sessionRepository.SaveActiveScreenAsync(sessionId, screen);
+                return await RenderAndBuildResponseAsync(screen);
+            }
 
-        // Evaluate systemic industrial terminal navigational special symbols
-        SymbolHandlingResult symbolResult = symbolHandler.HandleSymbol(screen, request.UserInput);
+            // Evaluate systemic industrial terminal navigational special symbols
+            SymbolHandlingResult symbolResult = await symbolHandler.HandleSymbolAsync(screen, request.UserInput);
 
-        if (symbolResult.Action == SymbolResultActionType.TerminateSession)
-        {
-            // Pack character payload into 32-bit unsigned primitives with default colors
-            // (Foreground: White = 15, Background: Black = 0, Flags: 0)
-            const byte background = (byte)ConsoleColor.Black;
-            const int foreground = (byte)ConsoleColor.White;
-            uint[] flatBuffer = [
-                PixelBitPacker.Pack('S', background, foreground, 0),
+            if (symbolResult.Action == SymbolResultActionType.TerminateSession)
+            {
+                // Pack character payload into 32-bit unsigned primitives with default colors
+                // (Foreground: White = 15, Background: Black = 0, Flags: 0)
+                const byte background = (byte)ConsoleColor.Black;
+                const int foreground = (byte)ConsoleColor.White;
+                uint[] flatBuffer = [
+                    PixelBitPacker.Pack('S', background, foreground, 0),
                 PixelBitPacker.Pack('E', background, foreground, 0),
                 PixelBitPacker.Pack('S', background, foreground, 0)
-            ];
+                ];
 
-            return new FullFrameResponse(sessionId, flatBuffer, 3, 1);
-        }
+                return new FullFrameResponse(sessionId, flatBuffer, 3, 1);
+            }
 
-        if (symbolResult.Action == SymbolResultActionType.NavigateToParentScreen)
-        {
-            // Safety check: if the current screen layout container lacks parent identifiers pointers, freeze context
-            if (!screen.ParentScreenId.HasValue)
+            if (symbolResult.Action == SymbolResultActionType.NavigateToParentScreen)
+            {
+                // Safety check: if the current screen layout container lacks parent identifiers pointers, freeze context
+                if (!screen.ParentScreenId.HasValue)
+                {
+                    await sessionRepository.SaveActiveScreenAsync(sessionId, screen);
+                    return await RenderAndBuildResponseAsync(screen);
+                }
+
+                Guid closingScreenId = screen.Id;
+                Guid parentScreenId = screen.ParentScreenId.Value;
+
+                // Pull the structural historical parent blueprint configuration using its explicit target instance checkpoint identifier
+                TerminalScreen? parentScreen = await sessionRepository.GetScreenByIdAsync(sessionId, parentScreenId);
+
+                if (parentScreen != null)
+                {
+                    await sessionRepository.SaveActiveScreenAsync(sessionId, parentScreen);
+                    await sessionRepository.RemoveScreenAsync(sessionId, closingScreenId);
+                    return await RenderAndBuildResponseAsync(parentScreen);
+                }
+            }
+
+            if (symbolResult.Action == SymbolResultActionType.ShiftFocusForward)
+            {
+                screen.FocusedEntryWidgetId = focusManager.GetNextFocus(screen);
+                await sessionRepository.SaveActiveScreenAsync(sessionId, screen);
+                return await RenderAndBuildResponseAsync(screen);
+            }
+
+            if (symbolResult.Action == SymbolResultActionType.ShiftFocusBackward)
+            {
+                // Reset edit widget.
+                TextWidget? focusedEntryWidget = screen.Widgets.FirstOrDefault(x => x.Id == screen.FocusedEntryWidgetId);
+                if (focusedEntryWidget is not null)
+                {
+                    focusedEntryWidget.Value = string.Empty;
+                }
+
+                screen.FocusedEntryWidgetId = focusManager.GetPreviousFocus(screen);
+                await sessionRepository.SaveActiveScreenAsync(sessionId, screen);
+                return await RenderAndBuildResponseAsync(screen);
+            }
+
+            // Processing local screen state mutations (e.g. data scrub via -r token)
+            if (symbolResult.Action == SymbolResultActionType.StayOnScreen)
             {
                 await sessionRepository.SaveActiveScreenAsync(sessionId, screen);
                 return await RenderAndBuildResponseAsync(screen);
             }
 
-            Guid closingScreenId = screen.Id;
-            Guid parentScreenId = screen.ParentScreenId.Value;
-
-            // Pull the structural historical parent blueprint configuration using its explicit target instance checkpoint identifier
-            TerminalScreen? parentScreen = await sessionRepository.GetScreenByIdAsync(sessionId, parentScreenId);
-
-            if (parentScreen != null)
+            if (symbolResult.Action == SymbolResultActionType.RefreshActiveScreen)
             {
-                await sessionRepository.SaveActiveScreenAsync(sessionId, parentScreen);
-                await sessionRepository.RemoveScreenAsync(sessionId, closingScreenId);
-                return await RenderAndBuildResponseAsync(parentScreen);
-            }
-        }
-
-        if (symbolResult.Action == SymbolResultActionType.ShiftFocusForward)
-        {
-            screen.FocusedEntryWidgetId = focusManager.GetNextFocus(screen);
-            await sessionRepository.SaveActiveScreenAsync(sessionId, screen);
-            return await RenderAndBuildResponseAsync(screen);
-        }
-
-        if (symbolResult.Action == SymbolResultActionType.ShiftFocusBackward)
-        {
-            // Reset edit widget.
-            TextWidget? focusedEntryWidget = screen.Widgets.FirstOrDefault(x => x.Id == screen.FocusedEntryWidgetId);
-            if (focusedEntryWidget is not null)
-            {
-                focusedEntryWidget.Value = string.Empty;
-            }
-
-            screen.FocusedEntryWidgetId = focusManager.GetPreviousFocus(screen);
-            await sessionRepository.SaveActiveScreenAsync(sessionId, screen);
-            return await RenderAndBuildResponseAsync(screen);
-        }
-
-        // Processing local screen state mutations (e.g. data scrub via -r token)
-        if (symbolResult.Action == SymbolResultActionType.StayOnScreen)
-        {
-            await sessionRepository.SaveActiveScreenAsync(sessionId, screen);
-            return await RenderAndBuildResponseAsync(screen);
-        }
-
-        // Execute quick stateless validation rules from memory registry dictionaries maps
-        IEnumerable<ValidationDelegate> screenValidators = validationProvider.GetValidatorsForScreen(screen.Name);
-        foreach (ValidationDelegate validate in screenValidators)
-        {
-            ValidationResult validationResult = validate(screen, request.UserInput);
-            if (!validationResult.IsValid)
-            {
-                SimpleMessageScreen errorScreen = errorScreenFactory.BuildErrorScreen(sessionId, screen, validationResult.ErrorMessage ?? "Validation Fault!");
-                await sessionRepository.SaveActiveScreenAsync(sessionId, errorScreen);
-                return await RenderAndBuildResponseAsync(errorScreen);
-            }
-        }
-
-        // Evaluate active editable fields business values inputs and workflows transitions
-        TextWidget? focusedWidget = screen.Widgets.FirstOrDefault(c => c.Id == screen.FocusedEntryWidgetId);
-        if (focusedWidget is TextEntryWidget entryWidget)
-        {
-            if (string.IsNullOrEmpty(entryWidget.Value) || !string.IsNullOrEmpty(request.UserInput))
-            {
-                entryWidget.Value = request.UserInput;
-            }
-
-            if (entryWidget.Command != null)
-            {
-                CommandContext commandContext = new(
-                    sessionId: sessionId,
-                    screen: screen,
-                    focusedEntryWidget: entryWidget,
-                    inputValue: entryWidget.Value,
-                    sessionRepository: sessionRepository
-                );
-
-                bool isExecutionSuccessful = await entryWidget.Command.ExecuteAsync(commandContext);
-                if (!isExecutionSuccessful)
+                TerminalScreen? currentScreen = await sessionRepository.GetActiveScreenAsync(sessionId);
+                if (currentScreen is null)
                 {
-                    entryWidget.Value = string.Empty;
                     await sessionRepository.SaveActiveScreenAsync(sessionId, screen);
-
-                    string errorMessage = commandContext.ErrorMessage ?? "Command Rejected Execution!";
-                    SimpleMessageScreen businessErrorScreen = errorScreenFactory.BuildErrorScreen(sessionId, screen, errorMessage);
-                    await sessionRepository.SaveActiveScreenAsync(sessionId, businessErrorScreen);
-                    return await RenderAndBuildResponseAsync(businessErrorScreen);
+                    return await RenderAndBuildResponseAsync(screen);
                 }
-                screen = await sessionRepository.GetActiveScreenAsync(sessionId) ?? screen;
+                return await RenderAndBuildResponseAsync(currentScreen);
             }
 
-            if (screen.FocusedEntryWidgetId == entryWidget.Id)
+            // Execute quick stateless validation rules from memory registry dictionaries maps
+            IEnumerable<ValidationDelegate> screenValidators = validationProvider.GetValidatorsForScreen(screen.Name);
+            foreach (ValidationDelegate validate in screenValidators)
             {
-                screen.FocusedEntryWidgetId = focusManager.GetNextFocus(screen);
+                ValidationResult validationResult = validate(screen, request.UserInput);
+                if (!validationResult.IsValid)
+                {
+                    SimpleMessageScreen errorScreen = errorScreenFactory.BuildErrorScreen(sessionId, screen, validationResult.ErrorMessage ?? "Validation Fault!");
+                    await sessionRepository.SaveActiveScreenAsync(sessionId, errorScreen);
+                    return await RenderAndBuildResponseAsync(errorScreen);
+                }
             }
+
+            // Evaluate active editable fields business values inputs and workflows transitions
+            TextWidget? focusedWidget = screen.Widgets.FirstOrDefault(c => c.Id == screen.FocusedEntryWidgetId);
+            if (focusedWidget is TextEntryWidget entryWidget)
+            {
+                if (string.IsNullOrEmpty(entryWidget.Value) || !string.IsNullOrEmpty(request.UserInput))
+                {
+                    entryWidget.Value = request.UserInput;
+                }
+
+                if (entryWidget.Command != null)
+                {
+                    CommandContext commandContext = new(
+                        sessionId: sessionId,
+                        screen: screen,
+                        focusedEntryWidget: entryWidget,
+                        inputValue: entryWidget.Value,
+                        sessionRepository: sessionRepository
+                    );
+
+                    bool isExecutionSuccessful = await entryWidget.Command.ExecuteAsync(commandContext);
+                    if (!isExecutionSuccessful)
+                    {
+                        entryWidget.Value = string.Empty;
+                        await sessionRepository.SaveActiveScreenAsync(sessionId, screen);
+
+                        string errorMessage = commandContext.ErrorMessage ?? "Command Rejected Execution!";
+                        SimpleMessageScreen businessErrorScreen = errorScreenFactory.BuildErrorScreen(sessionId, screen, errorMessage);
+                        await sessionRepository.SaveActiveScreenAsync(sessionId, businessErrorScreen);
+                        return await RenderAndBuildResponseAsync(businessErrorScreen);
+                    }
+                    screen = await sessionRepository.GetActiveScreenAsync(sessionId) ?? screen;
+                }
+
+                if (screen.FocusedEntryWidgetId == entryWidget.Id)
+                {
+                    screen.FocusedEntryWidgetId = focusManager.GetNextFocus(screen);
+                }
+            }
+            await sessionRepository.SaveActiveScreenAsync(sessionId, screen);
+            return await RenderAndBuildResponseAsync(screen);
         }
-        await sessionRepository.SaveActiveScreenAsync(sessionId, screen);
-        return await RenderAndBuildResponseAsync(screen);
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Unable to handle input");
+            throw;
+        }
     }
 
     private async Task<TerminalResponse> RenderAndBuildResponseAsync(TerminalScreen screen)

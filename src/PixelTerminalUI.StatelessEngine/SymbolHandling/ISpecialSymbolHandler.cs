@@ -15,5 +15,5 @@ public interface ISpecialSymbolHandler
     /// <param name="screen">The currently active presentation layer terminal screen instance tracking execution state metadata.</param>
     /// <param name="userInput">The raw text sequence captured from the thin client interaction input boundary buffer frame.</param>
     /// <returns>A validated evaluation state envelope containing structural engine execution routing instructions.</returns>
-    SymbolHandlingResult HandleSymbol(TerminalScreen screen, string userInput);
+    ValueTask<SymbolHandlingResult> HandleSymbolAsync(TerminalScreen screen, string userInput);
 }

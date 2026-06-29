@@ -3,20 +3,25 @@ using PixelTerminalUI.StatelessEngine.Widgets;
 
 namespace PixelTerminalUI.StatelessEngine.SymbolHandling;
 
+/// <summary>
+/// Provides the default implementation for evaluating, routing, and intercepting systemic 
+/// operational console inputs, macro shortcuts, and navigational control tokens.
+/// </summary>
 public sealed class SpecialSymbolHandler : ISpecialSymbolHandler
 {
     /// <summary>
-    /// Gets or sets an optional custom delegate to intercept specialized game or domain specific control sequences 
+    /// Gets or sets an optional custom asynchronous delegate to intercept specialized game or domain specific control sequences 
     /// before the core engine executes standard terminal routing operations.
     /// </summary>
-    public Func<TerminalScreen, string, SymbolHandlingResult>? CustomInterceptor { get; set; }
+    public Func<TerminalScreen, string, ValueTask<SymbolHandlingResult>>? CustomInterceptor { get; set; }
 
-    public SymbolHandlingResult HandleSymbol(TerminalScreen screen, string userInput)
+    /// <inheritdoc/>
+    public async ValueTask<SymbolHandlingResult> HandleSymbolAsync(TerminalScreen screen, string userInput)
     {
         // Execute the custom app-level interceptor if registered
         if (CustomInterceptor is not null)
         {
-            SymbolHandlingResult customResult = CustomInterceptor(screen, userInput);
+            SymbolHandlingResult customResult = await CustomInterceptor(screen, userInput);
             if (customResult.Action != SymbolResultActionType.NotHandled)
             {
                 return customResult;
