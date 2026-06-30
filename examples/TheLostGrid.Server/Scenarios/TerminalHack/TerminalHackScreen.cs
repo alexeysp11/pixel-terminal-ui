@@ -43,7 +43,6 @@ public sealed record TerminalHackScreen : TerminalScreen
             Visible = true
         };
 
-        // Construct a dynamic indicator tracking remaining transaction clearance attempts
         string attemptsIndicator = $"ATTEMPTS LEFT: {(attemptsLeft > 1 ? "[X] [X]" : "[X] [ ]")}";
         int attemptsLeftOffset = (Width - attemptsIndicator.Length) / 2;
 
@@ -59,11 +58,11 @@ public sealed record TerminalHackScreen : TerminalScreen
             Foreground = ConsoleColor.Red
         };
 
-        // Ensure we fall back gracefully to placeholder hashes if the collection wasn't initialized
         string hash1 = activeHashes.Length > 0 ? activeHashes[0] : "XXXXXXXX";
         string hash2 = activeHashes.Length > 1 ? activeHashes[1] : "XXXXXXXX";
         string hash3 = activeHashes.Length > 2 ? activeHashes[2] : "XXXXXXXX";
 
+        // Prepend numeric selectors to completely bypass clipboard copy constraints inside Docker buffers
         TextWidget memoryDumpOne = new()
         {
             Id = Guid.NewGuid(),
@@ -71,7 +70,7 @@ public sealed record TerminalHackScreen : TerminalScreen
             Left = 2,
             Top = 4,
             Width = 36,
-            Value = $"0x4F3A  {hash1}  []!$  SYSTEM  //",
+            Value = $" [1] 0x4F3A  {hash1}  SYSTEM  //",
             Visible = true,
             Foreground = ConsoleColor.DarkGreen
         };
@@ -83,7 +82,7 @@ public sealed record TerminalHackScreen : TerminalScreen
             Left = 2,
             Top = 5,
             Width = 36,
-            Value = $"0x4F4C  {hash2}  %#@!^  LINK    *#",
+            Value = $" [2] 0x4F4C  {hash2}  LINK    *#",
             Visible = true,
             Foreground = ConsoleColor.DarkGreen
         };
@@ -95,7 +94,7 @@ public sealed record TerminalHackScreen : TerminalScreen
             Left = 2,
             Top = 6,
             Width = 36,
-            Value = $"0x4F60  {hash3}  (&*#  QUANTUM ==",
+            Value = $" [3] 0x4F60  {hash3}  QUANTUM ==",
             Visible = true,
             Foreground = ConsoleColor.DarkGreen
         };
@@ -123,7 +122,7 @@ public sealed record TerminalHackScreen : TerminalScreen
             Width = 15,
             Required = true,
             EmptyEnterSymbol = '.',
-            Hint = "ENTER DECRYPTED KEYWORD TO ACCESS",
+            Hint = "ENTER OPTION CODE TO ACCESS",
             Visible = true,
             Command = hackCommand,
             Value = string.Empty,
