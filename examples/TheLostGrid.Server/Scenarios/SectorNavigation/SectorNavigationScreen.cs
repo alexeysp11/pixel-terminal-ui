@@ -76,6 +76,18 @@ public sealed record SectorNavigationScreen : TerminalScreen
             Foreground = ConsoleColor.DarkGray
         };
 
+        TextWidget optionThreeLabel = new()
+        {
+            Id = Guid.NewGuid(),
+            Name = "OptionTwoLabel",
+            Left = 2,
+            Top = 6,
+            Width = 35,
+            Value = "[3] BUY ENERGY",
+            Visible = true,
+            Foreground = ConsoleColor.DarkGray
+        };
+
         ExploreSectorCommand exploreCommand = new() { CharacterType = characterType };
 
         TextEntryWidget navigationInput = new()
@@ -97,7 +109,7 @@ public sealed record SectorNavigationScreen : TerminalScreen
         exploreCommand.WidgetId = navigationInput.Id;
 
         // Include the newly constructed telemetry status label into the active viewport layout collection
-        Widgets = [titleLabel, statusLabel, optionOneLabel, optionTwoLabel, navigationInput];
+        Widgets = [titleLabel, statusLabel, optionOneLabel, optionTwoLabel, optionThreeLabel, navigationInput];
         FocusedEntryWidgetId = navigationInput.Id;
     }
 }

@@ -30,7 +30,6 @@ public sealed class RegisterOperatorCommand : Command<SectorNavigationState>
         {
             Id = Guid.NewGuid(),
             Name = nameof(SectorNavigationScreen),
-            ParentScreenId = context.Screen.Id,
             SessionId = context.SessionId
         };
 

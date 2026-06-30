@@ -79,8 +79,7 @@ public sealed class DeployDroneCommand : Command<DroneDeploymentState>
                         Id = Guid.NewGuid(),
                         Name = nameof(SectorScannerScreen),
                         CharacterType = CharacterType,
-                        SessionId = context.SessionId,
-                        ParentScreenId = context.Screen.Id
+                        SessionId = context.SessionId
                     };
                 }
                 else
@@ -90,8 +89,7 @@ public sealed class DeployDroneCommand : Command<DroneDeploymentState>
                     {
                         Id = Guid.NewGuid(),
                         Name = nameof(SectorNavigationScreen),
-                        SessionId = context.SessionId,
-                        ParentScreenId = context.Screen.Id
+                        SessionId = context.SessionId
                     };
                 }
 

@@ -175,11 +175,25 @@ public sealed class RequestPipelineHandler(
                     bool isExecutionSuccessful = await entryWidget.Command.ExecuteAsync(commandContext);
                     if (!isExecutionSuccessful)
                     {
-                        entryWidget.Value = string.Empty;
-                        await sessionRepository.SaveActiveScreenAsync(sessionId, screen);
+                        // Extract the mutated presentation layout snapshot to preserve dynamic resource changes
+                        TerminalScreen actualScreen = await sessionRepository.GetActiveScreenAsync(sessionId) ?? screen;
+
+                        // Locate the target interaction element within the freshly restored screen context boundaries
+                        TextWidget? actualEntryWidget = actualScreen.Widgets.FirstOrDefault(w => w.Id == entryWidget.Id);
+                        if (actualEntryWidget is TextEntryWidget textInput)
+                        {
+                            // Unconditionally scrub the raw textual value to prevent stale input retention upon errors
+                            textInput.Value = string.Empty;
+                        }
+
+                        // Guarantee that the synchronized layout state with cleared input is persisted back to storage
+                        await sessionRepository.SaveActiveScreenAsync(sessionId, actualScreen);
 
                         string errorMessage = commandContext.ErrorMessage ?? "Command Rejected Execution!";
-                        SimpleMessageScreen businessErrorScreen = errorScreenFactory.BuildErrorScreen(sessionId, screen, errorMessage);
+
+                        // Pass the properly sanitized actualScreen reference so the historical parent state is clean
+                        SimpleMessageScreen businessErrorScreen = errorScreenFactory.BuildErrorScreen(sessionId, actualScreen, errorMessage);
+
                         await sessionRepository.SaveActiveScreenAsync(sessionId, businessErrorScreen);
                         return await RenderAndBuildResponseAsync(businessErrorScreen);
                     }

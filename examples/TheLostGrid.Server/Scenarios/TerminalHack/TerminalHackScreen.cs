@@ -8,7 +8,7 @@ public sealed record TerminalHackScreen : TerminalScreen
 {
     public int Energy { get; init; }
     public int Credits { get; init; }
-    public int AttemptsLeft { get; init; }
+    public int AttemptsLeft { get; set; }
     public string TargetHash { get; init; }
     public string[] ActiveHashes { get; init; }
     public CharacterType CharacterType { get; init; }

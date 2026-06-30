@@ -13,6 +13,7 @@ using PixelTerminalUI.StatelessEngine.Validators;
 using PixelTerminalUI.StatelessEngine.SymbolHandling;
 using TheLostGrid.Server.Infrastructure;
 using TheLostGrid.Server.Scenarios.Help;
+using TheLostGrid.Server.Scenarios.PowerGridTerminal;
 
 namespace TheLostGrid.Server;
 
@@ -51,6 +52,7 @@ public sealed class Program
                 .RegisterScreen<TerminalHackScreen>()
                 .RegisterScreen<SectorScannerScreen>()
                 .RegisterScreen<DroneDeploymentScreen>()
+                .RegisterScreen<PowerGridTerminalScreen>()
 
                 // Commands registration
                 .RegisterCommand<DismissHelpCommand>()
@@ -60,7 +62,8 @@ public sealed class Program
                 .RegisterCommand<SubmitHackKeyCommand>()
                 .RegisterCommand<ScanSectorsCommand>()
                 .RegisterCommand<DismissErrorCommand>()
-                .RegisterCommand<DeployDroneCommand>());
+                .RegisterCommand<DeployDroneCommand>()
+                .RegisterCommand<BuyEnergyCommand>());
 
         // Attach layout level presentation validation constraints routines
         builder.Services.AddScreenValidators(options =>

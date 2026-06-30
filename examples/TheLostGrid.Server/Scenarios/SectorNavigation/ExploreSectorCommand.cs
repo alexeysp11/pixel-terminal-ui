@@ -6,6 +6,7 @@ using PixelTerminalUI.StatelessEngine.Commands.Core;
 using TheLostGrid.Server.Enums;
 using TheLostGrid.Server.Scenarios.DroneDeployment;
 using PixelTerminalUI.StatelessEngine.Screens;
+using TheLostGrid.Server.Scenarios.PowerGridTerminal;
 
 namespace TheLostGrid.Server.Scenarios.SectorNavigation;
 
@@ -80,18 +81,16 @@ public sealed class ExploreSectorCommand : Command<SectorNavigationState>
                     context.ErrorMessage = "NOT ENOUGH ENERGY (10 ENG REQUIRED)";
                     return false;
                 }
-
                 nextScreen = new DroneDeploymentScreen(CharacterType, currentHubScreen.Energy, currentHubScreen.Credits)
                 {
                     Id = Guid.NewGuid(),
                     Name = nameof(DroneDeploymentScreen),
                     CharacterType = CharacterType,
-                    SessionId = context.SessionId,
-                    ParentScreenId = context.Screen.Id
+                    SessionId = context.SessionId
                 };
             }
         }
-        else
+        else if (chosenRoute == 2)
         {
             if (currentHubScreen.Energy < 30)
             {
@@ -115,8 +114,22 @@ public sealed class ExploreSectorCommand : Command<SectorNavigationState>
             {
                 Id = Guid.NewGuid(),
                 Name = nameof(SectorScannerScreen),
-                SessionId = context.SessionId,
-                ParentScreenId = context.Screen.Id
+                SessionId = context.SessionId
+            };
+        }
+        else
+        {
+            if (currentHubScreen.Credits < 10)
+            {
+                context.ErrorMessage = "NOT ENOUGH CREDITS (10 CR REQUIRED)";
+                return false;
+            }
+            nextScreen = new PowerGridTerminalScreen(CharacterType, currentHubScreen.Energy, currentHubScreen.Credits)
+            {
+                Id = Guid.NewGuid(),
+                Name = nameof(PowerGridTerminalScreen),
+                CharacterType = CharacterType,
+                SessionId = context.SessionId
             };
         }
 
@@ -139,6 +152,10 @@ public sealed class ExploreSectorCommand : Command<SectorNavigationState>
         if (cleanedSpan.Equals("2".AsSpan(), StringComparison.Ordinal))
         {
             return 2;
+        }
+        if (cleanedSpan.Equals("3".AsSpan(), StringComparison.Ordinal))
+        {
+            return 3;
         }
         return 0;
     }

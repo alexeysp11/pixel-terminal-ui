@@ -1,6 +1,7 @@
-﻿using TheLostGrid.Server.Scenarios.SectorNavigation;
-using PixelTerminalUI.StatelessEngine.Commands.CommandContexts;
+﻿using PixelTerminalUI.StatelessEngine.Commands.CommandContexts;
 using PixelTerminalUI.StatelessEngine.Commands.Core;
+using TheLostGrid.Server.Scenarios.SectorScanner;
+using PixelTerminalUI.StatelessEngine.Widgets;
 
 namespace TheLostGrid.Server.Scenarios.TerminalHack;
 
@@ -23,47 +24,80 @@ public sealed class SubmitHackKeyCommand : Command<OneStepCommandState>
             int updatedEnergy = Math.Max(0, originatingScreen.Energy - 10);
             int updatedCredits = originatingScreen.Credits + 30;
 
-            SectorNavigationScreen successHubScreen = new(originatingScreen.CharacterType, updatedEnergy, updatedCredits)
+            // Use the scanner screen to vividly broadcast the successful extraction log
+            string successLog = $"Bypass successful. Credited: 30 CR";
+
+            SectorScannerScreen successScreen = new(
+                originatingScreen.CharacterType,
+                updatedEnergy,
+                updatedCredits,
+                successLog)
             {
                 Id = Guid.NewGuid(),
-                Name = nameof(SectorNavigationScreen),
+                Name = nameof(SectorScannerScreen),
                 SessionId = context.SessionId,
                 ParentScreenId = context.Screen.Id
             };
 
-            await context.SessionRepository.SaveActiveScreenAsync(context.SessionId, successHubScreen);
+            await context.SessionRepository.SaveActiveScreenAsync(context.SessionId, successScreen);
             return true;
         }
 
         // Evaluate the failed attempt operational branch context 
+        // Evaluate the failed attempt operational branch context 
         if (originatingScreen.AttemptsLeft > 1)
         {
-            // The operative has remaining clearance attempts left within the network frame
+            int nextAttempts = originatingScreen.AttemptsLeft - 1;
+            int nextEnergy = Math.Max(0, originatingScreen.Energy - 15);
+
+            // Directly locate and mutate the specific widgets text values inside the active record collection
+            TextWidget? attemptsLabel = originatingScreen.Widgets
+                .FirstOrDefault(w => w.Name == "HackAttemptsLabel") as TextWidget;
+
+            if (attemptsLabel is not null)
+            {
+                attemptsLabel.Value = $"ATTEMPTS LEFT: {(nextAttempts > 1 ? "[X] [X]" : "[X] [ ]")}";
+            }
+
+            TextWidget? warningLabel = originatingScreen.Widgets
+                .FirstOrDefault(w => w.Name == "WarningText") as TextWidget;
+
+            if (warningLabel is not null)
+            {
+                warningLabel.Value = $"CRITICAL RESOURCE NET: ENG {nextEnergy}%";
+            }
+
+            // Create the new screen instance with completely synchronized fields
             TerminalHackScreen multiAttemptScreen = originatingScreen with
             {
                 Id = Guid.NewGuid(),
-                Energy = Math.Max(0, originatingScreen.Energy - 15),
-                AttemptsLeft = originatingScreen.AttemptsLeft - 1
+                Energy = nextEnergy,
+                AttemptsLeft = nextAttempts
             };
 
-            context.ErrorMessage = $"ACCESS DENIED! ATTEMPTS LEFT: {multiAttemptScreen.AttemptsLeft}";
+            context.ErrorMessage = $"ACCESS DENIED! ATTEMPTS LEFT: {nextAttempts}";
             await context.SessionRepository.SaveActiveScreenAsync(context.SessionId, multiAttemptScreen);
             return false;
         }
 
-        // Total exhaustion of system clearance credentials triggers critical failure routine redirection
+        // Total exhaustion of system clearance credentials: route to results screen with a descriptive event log
         int finalFailedEnergy = Math.Max(0, originatingScreen.Energy - 20);
+        string failureLog = "Terminal locked out. Critical trace detected!";
 
-        SectorNavigationScreen failureHubScreen = new(originatingScreen.CharacterType, finalFailedEnergy, originatingScreen.Credits)
+        SectorScannerScreen failureScreen = new(
+            originatingScreen.CharacterType,
+            finalFailedEnergy,
+            originatingScreen.Credits,
+            failureLog)
         {
             Id = Guid.NewGuid(),
-            Name = nameof(SectorNavigationScreen),
+            Name = nameof(SectorScannerScreen),
             SessionId = context.SessionId,
             ParentScreenId = context.Screen.Id
         };
 
-        context.ErrorMessage = "TERMINAL LOCKED: CRITICAL TRACE DETECTED!";
-        await context.SessionRepository.SaveActiveScreenAsync(context.SessionId, failureHubScreen);
+        // Complete the operation successfully with true since the state machine transitions to a valid destination
+        await context.SessionRepository.SaveActiveScreenAsync(context.SessionId, failureScreen);
 
         return true;
     }

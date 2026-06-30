@@ -34,8 +34,7 @@ public sealed class ScanSectorsCommand : Command<OneStepCommandState>
         {
             Id = Guid.NewGuid(),
             Name = nameof(SectorNavigationScreen),
-            SessionId = context.SessionId,
-            ParentScreenId = context.Screen.Id
+            SessionId = context.SessionId
         };
 
         await context.SessionRepository.SaveActiveScreenAsync(context.SessionId, returnHubScreen);
