@@ -10,11 +10,8 @@ namespace TheLostGrid.Server.Scenarios.DroneDeployment;
 public sealed class DeployDroneCommand : Command<DroneDeploymentState>
 {
     public override Guid Id { get; } = Guid.NewGuid();
-
     public override Guid WidgetId { get; set; }
-
     public override DroneDeploymentState State { get; set; } = DroneDeploymentState.AwaitingCommand;
-
     public required CharacterType CharacterType { get; init; }
 
     public override async ValueTask<bool> ExecuteAsync(ICommandContext context)
@@ -72,8 +69,12 @@ public sealed class DeployDroneCommand : Command<DroneDeploymentState>
                         resultMessage = "CRITICAL: DRONE DESTROYED BY TURRETS!";
                     }
 
-                    // TODO: Update when SectorScannerScreen constructor is formalized to accept energy, credits and text logs
-                    nextScreen = new SectorScannerScreen()
+                    // Route to the shared SectorScannerScreen screen layout passing the calculated payload data
+                    nextScreen = new SectorScannerScreen(
+                        CharacterType,
+                        updatedEnergy,
+                        updatedCredits,
+                        resultMessage)
                     {
                         Id = Guid.NewGuid(),
                         Name = nameof(SectorScannerScreen),

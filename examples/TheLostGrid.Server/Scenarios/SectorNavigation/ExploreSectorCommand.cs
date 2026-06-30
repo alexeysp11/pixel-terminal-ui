@@ -99,13 +99,24 @@ public sealed class ExploreSectorCommand : Command<SectorNavigationState>
                 return false;
             }
 
-            // TODO: Update when SectorScannerScreen constructor contracts are formalized with resource state tracking
-            nextScreen = new SectorScannerScreen()
+            // Calculate the randomized credit cache payload using game balance specifications
+            int discoveredCredits = Random.Shared.Next(15, 36);
+            int updatedEnergy = Math.Max(0, currentHubScreen.Energy - 30);
+            int updatedCredits = currentHubScreen.Credits + discoveredCredits;
+
+            string diagnosticLogMessage = $"Abandoned data cache detected. Credited: {discoveredCredits} CR";
+
+            // Initialize the updated scanner viewport configuration injecting the computed runtime context parameters
+            nextScreen = new SectorScannerScreen(
+                CharacterType,
+                updatedEnergy,
+                updatedCredits,
+                diagnosticLogMessage)
             {
                 Id = Guid.NewGuid(),
-                Name = "SectorScannerScreen",
-                CharacterType = CharacterType,
-                SessionId = context.SessionId
+                Name = nameof(SectorScannerScreen),
+                SessionId = context.SessionId,
+                ParentScreenId = context.Screen.Id
             };
         }
 

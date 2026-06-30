@@ -10,36 +10,51 @@ public sealed class ScanSectorsCommand : Command<OneStepCommandState>
     public override Guid Id { get; } = Guid.NewGuid();
     public override Guid WidgetId { get; set; }
     public override OneStepCommandState State { get; set; } = OneStepCommandState.Initial;
-    public CharacterType CharacterType { get; internal set; }
-    public ScannerStep CurrentStep { get; internal set; }
+    public required CharacterType CharacterType { get; init; }
 
     public override async ValueTask<bool> ExecuteAsync(ICommandContext context)
     {
-        // Cast the polymorphic base screen into our concrete hub layout context
-        if (context.Screen is not SectorNavigationScreen currentHubScreen)
+        if (context.Screen is not SectorScannerScreen currentScannerScreen)
         {
             return false;
         }
 
-        // Validate basic resource validation boundaries before state transitions
-        if (currentHubScreen.Energy < 30)
+        // Invoke the isolated synchronous frame helper to prevent async ref-struct compilation conflicts
+        if (!IsValidReturnSignal(context.InputValue))
         {
-            context.ErrorMessage = "NOT ENOUGH ENERGY (30 ENG REQUIRED)";
+            context.ErrorMessage = "INVALID COMMAND! ENTER 0 TO RETURN";
             return false;
         }
 
-        // Execute resource mutations completely statelessly using fluent record with-mutations
-        int discoveredCredits = Random.Shared.Next(5, 16);
-
-        SectorNavigationScreen updatedHubScreen = currentHubScreen with
+        // Seamlessly route the operative back to the navigation station carrying over updated resource boundaries
+        SectorNavigationScreen returnHubScreen = new(
+            CharacterType,
+            currentScannerScreen.Energy,
+            currentScannerScreen.Credits)
         {
-            Id = Guid.NewGuid(), // Generate a new frame container lifecycle identity
-            Energy = currentHubScreen.Energy - 30,
-            Credits = currentHubScreen.Credits + discoveredCredits
+            Id = Guid.NewGuid(),
+            Name = nameof(SectorNavigationScreen),
+            SessionId = context.SessionId,
+            ParentScreenId = context.Screen.Id
         };
 
-        // Persist the mutated screen directly into the session layer and notify the client
-        await context.SessionRepository.SaveActiveScreenAsync(context.SessionId, updatedHubScreen);
+        await context.SessionRepository.SaveActiveScreenAsync(context.SessionId, returnHubScreen);
+
         return true;
+    }
+
+    /// <summary>
+    /// Validates the raw text payload stream against the structural exit sequence within a synchronous thread boundary.
+    /// </summary>
+    /// <param name="inputValue">The unchecked raw textual sequence captured from the active terminal interaction boundary.</param>
+    /// <returns><c>true</c> if the processed input directly equates to the standard operational exit sequence token; otherwise, <c>false</c>.</returns>
+    private static bool IsValidReturnSignal(string inputValue)
+    {
+        if (inputValue == null)
+        {
+            return false;
+        }
+        ReadOnlySpan<char> inputSpan = inputValue.AsSpan().Trim();
+        return inputSpan.Equals("0".AsSpan(), StringComparison.Ordinal);
     }
 }
