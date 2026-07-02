@@ -3,7 +3,7 @@ using PixelTerminalUI.StatelessEngine.Screens;
 using PixelTerminalUI.StatelessEngine.SymbolHandling;
 using TheLostGrid.Server.Scenarios.Help;
 
-namespace TheLostGrid.Server.Infrastructure;
+namespace TheLostGrid.Server.Infrastructure.Interceptors;
 
 /// <summary>
 /// Provides domain-specific user input interception routines for the specialized terminal gameplay pipeline.

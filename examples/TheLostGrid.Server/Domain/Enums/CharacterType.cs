@@ -1,4 +1,4 @@
-﻿namespace TheLostGrid.Server.Enums;
+﻿namespace TheLostGrid.Server.Domain.Enums;
 
 /// <summary>
 /// Specifies the operative specialization class archetype of the user session character.

@@ -1,6 +1,6 @@
 ﻿using PixelTerminalUI.StatelessEngine.Screens;
 using PixelTerminalUI.StatelessEngine.Widgets;
-using TheLostGrid.Server.Enums;
+using TheLostGrid.Server.Domain.Enums;
 
 namespace TheLostGrid.Server.Scenarios.DroneDeployment;
 
@@ -72,7 +72,7 @@ public sealed record DroneDeploymentScreen : TerminalScreen
             Foreground = ConsoleColor.DarkGray
         };
 
-        DeployDroneCommand deployCommand = new() { CharacterType = characterType };
+        DroneDeploymentDeployCommand deployCommand = new() { CharacterType = characterType };
 
         TextEntryWidget droneInput = new()
         {

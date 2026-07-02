@@ -5,12 +5,12 @@ using Moq;
 using PixelTerminalUI.StatelessEngine.Repositories;
 using PixelTerminalUI.StatelessEngine.Screens;
 using PixelTerminalUI.StatelessEngine.SymbolHandling;
-using TheLostGrid.Server.Enums;
-using TheLostGrid.Server.Infrastructure;
+using TheLostGrid.Server.Domain.Enums;
+using TheLostGrid.Server.Infrastructure.Interceptors;
 using TheLostGrid.Server.Scenarios.Help;
 using TheLostGrid.Server.Scenarios.SectorNavigation;
 
-namespace TheLostGrid.Server.Tests.Infrastructure;
+namespace TheLostGrid.Server.Tests.Infrastructure.Interceptors;
 
 public sealed class GameplayInputInterceptorTests
 {

@@ -1,21 +1,21 @@
 ﻿using FluentAssertions;
 using Moq;
 using PixelTerminalUI.StatelessEngine.Commands.CommandContexts;
-using PixelTerminalUI.StatelessEngine.Tests.SymbolHandling.Fakes;
+using PixelTerminalUI.StatelessEngine.Tests.Commands.Fakes;
 
 namespace PixelTerminalUI.StatelessEngine.Tests.Commands;
 
 public sealed class StubCommandTests
 {
     [Theory]
-    [InlineData(StubCommandState.Initial, 0)]
-    [InlineData(StubCommandState.Processing, 1)]
-    [InlineData(StubCommandState.Completed, 2)]
-    [InlineData(StubCommandState.Failed, 99)]
-    public void RawState_PropertyBitwiseMapping_ShouldPackEnumToIntCorrectly(StubCommandState sourceState, int expectedRawValue)
+    [InlineData(StubTestingCommandState.Initial, 0)]
+    [InlineData(StubTestingCommandState.Processing, 1)]
+    [InlineData(StubTestingCommandState.Completed, 2)]
+    [InlineData(StubTestingCommandState.Failed, 99)]
+    public void RawState_PropertyBitwiseMapping_ShouldPackEnumToIntCorrectly(StubTestingCommandState sourceState, int expectedRawValue)
     {
         // Arrange
-        StubCommand command = new();
+        StubTestingCommand command = new();
 
         // Act
         command.State = sourceState;
@@ -27,18 +27,18 @@ public sealed class StubCommandTests
     }
 
     [Theory]
-    [InlineData(0, StubCommandState.Initial)]
-    [InlineData(1, StubCommandState.Processing)]
-    [InlineData(2, StubCommandState.Completed)]
-    [InlineData(99, StubCommandState.Failed)]
-    public void RawState_PropertyBitwiseMapping_ShouldUnpackIntToEnumCorrectly(int sourceRawValue, StubCommandState expectedState)
+    [InlineData(0, StubTestingCommandState.Initial)]
+    [InlineData(1, StubTestingCommandState.Processing)]
+    [InlineData(2, StubTestingCommandState.Completed)]
+    [InlineData(99, StubTestingCommandState.Failed)]
+    public void RawState_PropertyBitwiseMapping_ShouldUnpackIntToEnumCorrectly(int sourceRawValue, StubTestingCommandState expectedState)
     {
         // Arrange
-        StubCommand command = new();
+        StubTestingCommand command = new();
 
         // Act
         command.RawState = sourceRawValue;
-        StubCommandState unpackedResult = command.State;
+        StubTestingCommandState unpackedResult = command.State;
 
         // Assert
         unpackedResult.Should().Be(expectedState,
@@ -49,7 +49,7 @@ public sealed class StubCommandTests
     public async Task ExecuteAsync_WhenInvoked_ShouldPassContextAndExecuteUnderlyingBusinessWorkflow()
     {
         // Arrange
-        StubCommand command = new();
+        StubTestingCommand command = new();
 
         // Mocking the command context using Moq
         Mock<ICommandContext> contextMock = new();

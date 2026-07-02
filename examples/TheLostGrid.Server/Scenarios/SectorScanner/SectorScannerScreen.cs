@@ -1,6 +1,6 @@
 ﻿using PixelTerminalUI.StatelessEngine.Screens;
 using PixelTerminalUI.StatelessEngine.Widgets;
-using TheLostGrid.Server.Enums;
+using TheLostGrid.Server.Domain.Enums;
 
 namespace TheLostGrid.Server.Scenarios.SectorScanner;
 
@@ -94,7 +94,7 @@ public sealed record SectorScannerScreen : TerminalScreen
             Foreground = ConsoleColor.DarkGray
         };
 
-        ScanSectorsCommand scanCommand = new()
+        SectorScannerScanCommand scanCommand = new()
         {
             CharacterType = characterType
         };

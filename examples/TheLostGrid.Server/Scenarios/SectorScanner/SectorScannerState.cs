@@ -1,6 +1,6 @@
 ﻿namespace TheLostGrid.Server.Scenarios.SectorScanner;
 
-public enum ScannerStep
+public enum SectorScannerState
 {
     InitialTrigger,
     AwaitingScreenResponse

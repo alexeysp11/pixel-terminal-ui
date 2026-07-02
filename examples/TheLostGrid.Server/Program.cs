@@ -11,9 +11,9 @@ using PixelTerminalUI.StatelessEngine.Commands.DismissError;
 using PixelTerminalUI.StatelessEngine.Extensions.ServiceCollectionExtensions;
 using PixelTerminalUI.StatelessEngine.Validators;
 using PixelTerminalUI.StatelessEngine.SymbolHandling;
-using TheLostGrid.Server.Infrastructure;
 using TheLostGrid.Server.Scenarios.Help;
 using TheLostGrid.Server.Scenarios.PowerGridTerminal;
+using TheLostGrid.Server.Infrastructure.Interceptors;
 
 namespace TheLostGrid.Server;
 
@@ -55,15 +55,15 @@ public sealed class Program
                 .RegisterScreen<PowerGridTerminalScreen>()
 
                 // Commands registration
-                .RegisterCommand<DismissHelpCommand>()
-                .RegisterCommand<ConnectNeuralLinkCommand>()
-                .RegisterCommand<RegisterOperatorCommand>()
-                .RegisterCommand<ExploreSectorCommand>()
-                .RegisterCommand<SubmitHackKeyCommand>()
-                .RegisterCommand<ScanSectorsCommand>()
+                .RegisterCommand<HelpDismissCommand>()
+                .RegisterCommand<WelcomeStartGameCommand>()
+                .RegisterCommand<CharacterCreationSubmitCommand>()
+                .RegisterCommand<SectorNavigationExploreCommand>()
+                .RegisterCommand<TerminalHackSubmitKeyCommand>()
+                .RegisterCommand<SectorScannerScanCommand>()
                 .RegisterCommand<DismissErrorCommand>()
-                .RegisterCommand<DeployDroneCommand>()
-                .RegisterCommand<BuyEnergyCommand>());
+                .RegisterCommand<DroneDeploymentDeployCommand>()
+                .RegisterCommand<PowerGridTerminalBuyEnergyCommand>());
 
         // Attach layout level presentation validation constraints routines
         builder.Services.AddScreenValidators(options =>

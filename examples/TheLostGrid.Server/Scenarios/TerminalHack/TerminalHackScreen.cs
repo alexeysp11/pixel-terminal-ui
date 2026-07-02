@@ -1,6 +1,6 @@
 ﻿using PixelTerminalUI.StatelessEngine.Screens;
 using PixelTerminalUI.StatelessEngine.Widgets;
-using TheLostGrid.Server.Enums;
+using TheLostGrid.Server.Domain.Enums;
 
 namespace TheLostGrid.Server.Scenarios.TerminalHack;
 
@@ -111,7 +111,7 @@ public sealed record TerminalHackScreen : TerminalScreen
             Foreground = ConsoleColor.Yellow
         };
 
-        SubmitHackKeyCommand hackCommand = new();
+        TerminalHackSubmitKeyCommand hackCommand = new();
 
         TextEntryWidget hackInput = new()
         {

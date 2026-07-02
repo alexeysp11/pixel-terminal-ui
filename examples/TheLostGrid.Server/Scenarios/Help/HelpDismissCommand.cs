@@ -4,7 +4,7 @@ using PixelTerminalUI.StatelessEngine.Screens;
 
 namespace TheLostGrid.Server.Scenarios.Help;
 
-public sealed class DismissHelpCommand : Command<OneStepCommandState>
+public sealed class HelpDismissCommand : Command<OneStepCommandState>
 {
     public override Guid Id { get; } = Guid.NewGuid();
     public override Guid WidgetId { get; set; }

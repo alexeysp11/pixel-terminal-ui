@@ -1,6 +1,6 @@
 ﻿using PixelTerminalUI.StatelessEngine.Screens;
 using PixelTerminalUI.StatelessEngine.Widgets;
-using TheLostGrid.Server.Enums;
+using TheLostGrid.Server.Domain.Enums;
 
 namespace TheLostGrid.Server.Scenarios.PowerGridTerminal;
 
@@ -71,7 +71,7 @@ public sealed record PowerGridTerminalScreen : TerminalScreen
             Foreground = ConsoleColor.DarkGray
         };
 
-        BuyEnergyCommand buyCommand = new() { CharacterType = characterType };
+        PowerGridTerminalBuyEnergyCommand buyCommand = new() { CharacterType = characterType };
 
         TextEntryWidget gridInput = new()
         {

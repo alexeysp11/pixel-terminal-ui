@@ -1,19 +1,42 @@
 ﻿using PixelTerminalUI.StatelessEngine.Commands.CommandContexts;
 using PixelTerminalUI.StatelessEngine.Commands.Core;
 using PixelTerminalUI.StatelessEngine.Screens;
-using TheLostGrid.Server.Enums;
+using TheLostGrid.Server.Domain.Enums;
 using TheLostGrid.Server.Scenarios.SectorNavigation;
 using TheLostGrid.Server.Scenarios.SectorScanner;
 
 namespace TheLostGrid.Server.Scenarios.DroneDeployment;
 
-public sealed class DeployDroneCommand : Command<DroneDeploymentState>
+/// <summary>
+/// Controls the backend execution flow managing physical reconnaissance drone fabrication and field deployment cycles.
+/// </summary>
+public sealed class DroneDeploymentDeployCommand : Command<DroneDeploymentState>
 {
+    /// <summary>
+    /// Gets the unique structural identifier assigned to this runtime transaction frame instance.
+    /// </summary>
     public override Guid Id { get; } = Guid.NewGuid();
+
+    /// <summary>
+    /// Gets or sets the target interaction element identifier bound to this automated processing loop.
+    /// </summary>
     public override Guid WidgetId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the internal state tracking configuration for single-step transaction boundaries.
+    /// </summary>
     public override DroneDeploymentState State { get; set; } = DroneDeploymentState.AwaitingCommand;
+
+    /// <summary>
+    /// Gets or init the unique operational archetype signature for the active session boundary frame.
+    /// </summary>
     public required CharacterType CharacterType { get; init; }
 
+    /// <summary>
+    /// Evaluates technical asset allocation rules and executes deployment probability trees before switching active view matrices.
+    /// </summary>
+    /// <param name="context">The localized communication pipeline carrying external request metadata parameters.</param>
+    /// <returns>An asynchronous task wrapping a boolean indicator signifying operational pipeline state changes.</returns>
     public override async ValueTask<bool> ExecuteAsync(ICommandContext context)
     {
         if (context == null)
@@ -101,6 +124,11 @@ public sealed class DeployDroneCommand : Command<DroneDeploymentState>
         }
     }
 
+    /// <summary>
+    /// Processes incoming textual representations to parse automated hardware launch sequences.
+    /// </summary>
+    /// <param name="inputValue">The untrusted raw input value payload sequence string.</param>
+    /// <returns>A concrete action indicator code mapping to deployment decisions or an error signature.</returns>
     private static int ParseDroneAction(string inputValue)
     {
         if (inputValue == null)

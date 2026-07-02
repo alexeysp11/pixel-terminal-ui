@@ -70,7 +70,7 @@ public sealed record HelpScreen : TerminalScreen
             Foreground = ConsoleColor.Gray
         };
 
-        DismissHelpCommand dismissCommand = new();
+        HelpDismissCommand dismissCommand = new();
 
         TextEntryWidget exitInput = new()
         {

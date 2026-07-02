@@ -1,6 +1,6 @@
 ﻿using PixelTerminalUI.StatelessEngine.Screens;
 using PixelTerminalUI.StatelessEngine.Widgets;
-using TheLostGrid.Server.Enums;
+using TheLostGrid.Server.Domain.Enums;
 
 namespace TheLostGrid.Server.Scenarios.SectorNavigation;
 
@@ -88,7 +88,7 @@ public sealed record SectorNavigationScreen : TerminalScreen
             Foreground = ConsoleColor.DarkGray
         };
 
-        ExploreSectorCommand exploreCommand = new() { CharacterType = characterType };
+        SectorNavigationExploreCommand exploreCommand = new() { CharacterType = characterType };
 
         TextEntryWidget navigationInput = new()
         {

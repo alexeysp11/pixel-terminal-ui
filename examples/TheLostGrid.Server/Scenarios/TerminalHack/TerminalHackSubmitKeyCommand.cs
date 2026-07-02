@@ -5,12 +5,31 @@ using PixelTerminalUI.StatelessEngine.Widgets;
 
 namespace TheLostGrid.Server.Scenarios.TerminalHack;
 
-public sealed class SubmitHackKeyCommand : Command<OneStepCommandState>
+/// <summary>
+/// Manages the evaluation of user decryption inputs during active network cell breach operations.
+/// </summary>
+public sealed class TerminalHackSubmitKeyCommand : Command<OneStepCommandState>
 {
+    /// <summary>
+    /// Gets or sets the internal state tracking configuration for single-step transaction boundaries.
+    /// </summary>
     public override OneStepCommandState State { get; set; } = OneStepCommandState.Initial;
+
+    /// <summary>
+    /// Gets the unique structural identifier assigned to this runtime transaction frame instance.
+    /// </summary>
     public override Guid Id { get; } = Guid.NewGuid();
+
+    /// <summary>
+    /// Gets or sets the target interaction element identifier bound to this automated processing loop.
+    /// </summary>
     public override Guid WidgetId { get; set; }
 
+    /// <summary>
+    /// Validates the operator decryption attempt, altering active session parameters or navigating to scanner matrices based on accuracy.
+    /// </summary>
+    /// <param name="context">The localized communication pipeline carrying external request metadata parameters.</param>
+    /// <returns>An asynchronous task wrapping a boolean indicator signifying operational pipeline state changes.</returns>
     public override async ValueTask<bool> ExecuteAsync(ICommandContext context)
     {
         if (context.Screen is not TerminalHackScreen originatingScreen)
@@ -106,6 +125,11 @@ public sealed class SubmitHackKeyCommand : Command<OneStepCommandState>
         return true;
     }
 
+    /// <summary>
+    /// Processes incoming textual representations to parse discrete numerical option codes.
+    /// </summary>
+    /// <param name="inputValue">The untrusted raw input value payload sequence string.</param>
+    /// <returns>A concrete option identifier integer mapping to active collections or a negative boundary token.</returns>
     private static int ParseOptionIndex(string inputValue)
     {
         if (inputValue == null)

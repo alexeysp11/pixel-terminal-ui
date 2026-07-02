@@ -1,23 +1,44 @@
-﻿using TheLostGrid.Server.Scenarios.CharacterCreation;
-using TheLostGrid.Server.Scenarios.SectorScanner;
+﻿using TheLostGrid.Server.Scenarios.SectorScanner;
 using TheLostGrid.Server.Scenarios.TerminalHack;
 using PixelTerminalUI.StatelessEngine.Commands.CommandContexts;
 using PixelTerminalUI.StatelessEngine.Commands.Core;
-using TheLostGrid.Server.Enums;
 using TheLostGrid.Server.Scenarios.DroneDeployment;
 using PixelTerminalUI.StatelessEngine.Screens;
 using TheLostGrid.Server.Scenarios.PowerGridTerminal;
+using TheLostGrid.Server.Domain.Enums;
 
 namespace TheLostGrid.Server.Scenarios.SectorNavigation;
 
-public sealed class ExploreSectorCommand : Command<SectorNavigationState>
+/// <summary>
+/// Handles the decision matrix routing paths when an operator interacts with the primary sector navigation grid.
+/// </summary>
+public sealed class SectorNavigationExploreCommand : Command<OneStepCommandState>
 {
+    /// <summary>
+    /// Gets the unique structural identifier assigned to this runtime transaction frame instance.
+    /// </summary>
     public override Guid Id { get; } = Guid.NewGuid();
-    public override Guid WidgetId { get; set; }
-    public override SectorNavigationState State { get; set; } = SectorNavigationState.None;
 
+    /// <summary>
+    /// Gets or sets the target interaction element identifier bound to this automated processing loop.
+    /// </summary>
+    public override Guid WidgetId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the internal state tracking configuration for single-step transaction boundaries.
+    /// </summary>
+    public override OneStepCommandState State { get; set; } = OneStepCommandState.Initial;
+
+    /// <summary>
+    /// Gets or init the unique operational archetype signature for the active session boundary frame.
+    /// </summary>
     public required CharacterType CharacterType { get; init; }
 
+    /// <summary>
+    /// Evaluates the tactical choice index input, performs vital energy or credit validation, and switches to the chosen terminal screen view context.
+    /// </summary>
+    /// <param name="context">The localized communication pipeline carrying external request metadata parameters.</param>
+    /// <returns>An asynchronous task wrapping a boolean indicator signifying operational pipeline state changes.</returns>
     public override async ValueTask<bool> ExecuteAsync(ICommandContext context)
     {
         if (context.Screen is not SectorNavigationScreen currentHubScreen)
@@ -137,6 +158,11 @@ public sealed class ExploreSectorCommand : Command<SectorNavigationState>
         return true;
     }
 
+    /// <summary>
+    /// Processes text characters to extract structural grid choice routing numbers.
+    /// </summary>
+    /// <param name="inputValue">The untrusted raw input value payload sequence string.</param>
+    /// <returns>A concrete operational target option index or a default error-bound integer signature mapping.</returns>
     private static int ParseNavigationOption(string inputValue)
     {
         if (inputValue == null)
@@ -160,4 +186,3 @@ public sealed class ExploreSectorCommand : Command<SectorNavigationState>
         return 0;
     }
 }
-

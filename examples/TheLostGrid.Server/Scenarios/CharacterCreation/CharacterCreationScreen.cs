@@ -64,7 +64,7 @@ public sealed record CharacterCreationScreen : TerminalScreen
             Foreground = ConsoleColor.DarkGray
         };
 
-        RegisterOperatorCommand registrationCommand = new();
+        CharacterCreationSubmitCommand registrationCommand = new();
 
         TextEntryWidget classInput = new()
         {

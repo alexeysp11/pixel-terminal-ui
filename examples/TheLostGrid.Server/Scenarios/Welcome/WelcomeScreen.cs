@@ -58,7 +58,7 @@ public sealed record WelcomeScreen : TerminalScreen
             Foreground = ConsoleColor.Gray
         };
 
-        ConnectNeuralLinkCommand connectionCommand = new();
+        WelcomeStartGameCommand connectionCommand = new();
 
         TextEntryWidget hiddenInput = new()
         {

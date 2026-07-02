@@ -1,7 +1,7 @@
 ﻿using FluentAssertions;
 using PixelTerminalUI.StatelessEngine.Screens;
 using PixelTerminalUI.StatelessEngine.SymbolHandling;
-using PixelTerminalUI.StatelessEngine.Tests.SymbolHandling.Fakes;
+using PixelTerminalUI.StatelessEngine.Tests.Commands.Fakes;
 using PixelTerminalUI.StatelessEngine.Widgets;
 
 namespace PixelTerminalUI.StatelessEngine.Tests.SymbolHandling;
@@ -271,7 +271,7 @@ public sealed class SpecialSymbolHandlerTests
         // Arrange
         SpecialSymbolHandler handler = new();
         Guid editWidgetId = Guid.NewGuid();
-        StubCommand stubCommand = new();
+        StubTestingCommand stubCommand = new();
 
         TextEntryWidget widgetWithCommand = new()
         {

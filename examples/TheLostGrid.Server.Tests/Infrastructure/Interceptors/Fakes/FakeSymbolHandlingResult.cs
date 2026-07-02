@@ -1,6 +1,6 @@
 ﻿using PixelTerminalUI.StatelessEngine.SymbolHandling;
 
-namespace TheLostGrid.Server.Tests.Infrastructure.Fakes;
+namespace TheLostGrid.Server.Tests.Infrastructure.Interceptors.Fakes;
 
 public readonly record struct FakeSymbolHandlingResult
 {
@@ -8,4 +8,3 @@ public readonly record struct FakeSymbolHandlingResult
     public static SymbolHandlingResult RefreshActiveScreen() => new() { Action = SymbolResultActionType.RefreshActiveScreen };
     public static SymbolHandlingResult NotHandled() => new() { Action = SymbolResultActionType.NotHandled };
 }
-
