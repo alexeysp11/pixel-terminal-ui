@@ -8,7 +8,7 @@ namespace PixelTerminalUI.StatelessEngine.Rendering.Core;
 
 /// <summary>
 /// Implements the rendering engine responsible for transforming a declarative screen layout 
-/// into a raw, two-dimensional character pixel matrix.
+/// into a raw, character pixel array.
 /// </summary>
 /// <param name="registry">The operational centralized index matching explicit UI elements to their target visual layout engines.</param>
 public sealed class StatelessRenderer(IWidgetRendererRegistry registry) : IStatelessRenderer
