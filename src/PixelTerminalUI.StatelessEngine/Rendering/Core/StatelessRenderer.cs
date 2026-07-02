@@ -6,8 +6,18 @@ using PixelTerminalUI.StatelessEngine.Widgets;
 
 namespace PixelTerminalUI.StatelessEngine.Rendering.Core;
 
+/// <summary>
+/// Implements the rendering engine responsible for transforming a declarative screen layout 
+/// into a raw, two-dimensional character pixel matrix.
+/// </summary>
+/// <param name="registry">The operational centralized index matching explicit UI elements to their target visual layout engines.</param>
 public sealed class StatelessRenderer(IWidgetRendererRegistry registry) : IStatelessRenderer
 {
+    /// <summary>
+    /// Evaluates the screen layout and draws layout tokens directly into the provided memory buffer.
+    /// </summary>
+    /// <param name="screen">The stateful screen abstraction containing structural UI component hierarchies.</param>
+    /// <param name="buffer">The flat destination array allocated or rented by the caller to store screen state.</param>
     public void Draw(TerminalScreen screen, Pixel[] buffer)
     {
         int width = screen.Width;
