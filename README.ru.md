@@ -116,7 +116,9 @@ builder.Services.AddMongoUserSessionRepository(
 
 ## 🕹️ Демонстрационное приложение
 
-Чтобы увидеть фреймворк в действии, вы можете запустить **The Lost Grid** — текстовую киберпанк-игру, написанную поверх `PixelTerminalUI`. Она служит эталоном проектирования реальных Stateless-приложений.
+Чтобы увидеть фреймворк в действии, вы можете запустить **The Lost Grid** — текстовую игру, написанную поверх `PixelTerminalUI`. Она служит эталоном проектирования реальных Stateless-приложений.
+
+![The Lost Grid Gameplay](docs/img/gameplay-demo.gif)
 
 * 📖 [Подробный разбор архитектуры игры и механики геймплея](docs/the-lost-grid/README.ru.md)
 * 🖥️ **Серверная часть (API):** `examples/TheLostGrid.Server` — логика экранов, команд и валидаторов.
@@ -150,6 +152,6 @@ docker exec -it pixel_terminal_app env TERMINAL_SERVER_URL=http://localhost:8080
 - [x] **Redis Hash Persistence:** Миграция горячего UI-стейта и кадровых буферов с MongoDB на атомарные поля Redis Hash для снижения аллокаций памяти ([Issue #2](https://github.com/alexeysp11/pixel-terminal-ui/issues/2)).
 
 ### ⏳ В процессе разработки & Бэклог
-- [ ] **Interactive Form Input:** Полноценная обработка фокуса элементов управления и реализация сценариев ввода данных внутри текстовых полей форм ([Issue #1](https://github.com/alexeysp11/pixel-terminal-ui/issues/1)).
+- [ ] **Инлайновый ввод и серверное управление фокусом**: Реализация маппинга координат активного инпута на стороне сервера. Это позволит отрисовывать курсор ввода (`_`) прямо внутри сгенерированной пиксельной матрицы, избавив пользователя от необходимости вводить команды в отдельной строке под формой ([Issue #1](https://github.com/alexeysp11/pixel-terminal-ui/issues/1)).
 - [ ] **Resilient CLI Client:** Рефакторинг хоста консольного тонкого клиента с переходом на `Microsoft.Extensions.Hosting`, выносом конфигураций в AppSettings и внедрением политик повторных запросов `Polly` для стабильного соединения ([Issue #3](https://github.com/alexeysp11/pixel-terminal-ui/issues/3)).
 - [ ] **Observability Extension:** Интеграция легковесного агента OpenTelemetry (OTLP) для автоматического сбора метрик Kestrel и трейсинга цепочек выполнения команд без раздувания кодовой базы.

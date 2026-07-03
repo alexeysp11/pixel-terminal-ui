@@ -116,7 +116,9 @@ builder.Services.AddMongoUserSessionRepository(
 
 ## 🕹️ Demo Application
 
-To see the framework in action, you can run **The Lost Grid** — a text-based cyberpunk game written on top of `PixelTerminalUI`. It serves as a benchmark for designing real-world stateless applications.
+To see the framework in action, you can run **The Lost Grid** — a text-based game written on top of `PixelTerminalUI`. It serves as a benchmark for designing real-world stateless applications.
+
+![The Lost Grid Gameplay](docs/img/gameplay-demo.gif)
 
 * 📖 [Detailed analysis of the game architecture and gameplay mechanics](docs/the-lost-grid/README.md)
 * 🖥️ **Server Part (API):** `examples/TheLostGrid.Server` — screen logic, commands, and validators.
@@ -150,6 +152,6 @@ The project is being developed as an experimental R&D sandbox. Current implement
 - [x] **Redis Hash Persistence:** Migrating hot UI state and frame buffers from MongoDB to Redis Hash atomic fields to reduce memory allocations ([Issue #2](https://github.com/alexeysp11/pixel-terminal-ui/issues/2)).
 
 ### ⏳ In Development & Backlog
-- [ ] **Interactive Form Input:** Fully handle control focus and implement data entry scenarios within form text fields ([Issue #1](https://github.com/alexeysp11/pixel-terminal-ui/issues/1)).
+- [ ] **Server-Driven Focus & Inline Input Cursor**: Implementing server-side coordinate mapping for focused text entries. This enables rendering the blinking input cursor (`_`) directly inside the pixel matrix layout instead of handling transactions via the bottom console input line ([Issue #1](https://github.com/alexeysp11/pixel-terminal-ui/issues/1)).
 - [ ] **Resilient CLI Client:** Refactoring the console thin client host to use `Microsoft.Extensions.Hosting`, moving configurations to AppSettings, and implementing `Polly` retry policies for a stable connection ([Issue #3](https://github.com/alexeysp11/pixel-terminal-ui/issues/3)).
 - [ ] **Observability Extension:** Integration of the OpenTelemetry Lightweight Agent (OTLP) to automatically collect Kestrel metrics and trace command execution chains without adding codebase bloat.
