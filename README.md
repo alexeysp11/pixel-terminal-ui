@@ -124,6 +124,8 @@ To see the framework in action, you can run **The Lost Grid** — a text-based g
 * 🖥️ **Server Part (API):** `examples/TheLostGrid.Server` — screen logic, commands, and validators.
 * 📟 **Client Part (TUI):** `examples/TheLostGrid.Client` — a thin console client for rendering frames.
 
+> ℹ️ **Network Loop:** Input is transaction-based. The client sends a single network payload only when the user presses `Enter` instead of streaming every keystroke.
+
 ### 🐳 Running in Docker
 
 You can deploy a ready-made demo game and all the necessary infrastructure with a single command. The framework will automatically set up the engine core server, a high-performance distributed Redis cache, and a user-friendly web control panel:
