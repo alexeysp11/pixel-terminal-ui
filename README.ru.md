@@ -116,7 +116,7 @@ builder.Services.AddMongoUserSessionRepository(
 
 ## 🕹️ Демонстрационное приложение
 
-Чтобы увидеть фреймворк в действии, вы можете запустить **The Lost Grid** — текстовую игру, написанную поверх `PixelTerminalUI`. Она служит эталоном проектирования реальных Stateless-приложений.
+Чтобы увидеть фреймворк в действии, вы можете запустить **The Lost Grid** — текстовую демонстрационную игру, написанную для демонстрации возможностей `PixelTerminalUI`.
 
 ![The Lost Grid Gameplay](docs/img/gameplay-demo.gif)
 

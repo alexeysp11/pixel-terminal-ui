@@ -116,7 +116,7 @@ builder.Services.AddMongoUserSessionRepository(
 
 ## 🕹️ Demo Application
 
-To see the framework in action, you can run **The Lost Grid** — a text-based game written on top of `PixelTerminalUI`. It serves as a benchmark for designing real-world stateless applications.
+To see the framework in action, you can run **The Lost Grid** — a text-based demo game written to showcase the capabilities of `PixelTerminalUI`.
 
 ![The Lost Grid Gameplay](docs/img/gameplay-demo.gif)
 
