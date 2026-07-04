@@ -120,7 +120,7 @@ To see the framework in action, you can run **The Lost Grid** — a text-based d
 
 ![The Lost Grid Gameplay](docs/img/gameplay-demo.gif)
 
-* 📖 [Detailed analysis of the game architecture and gameplay mechanics](docs/the-lost-grid/README.md)
+* 📖 [Detailed analysis of the game architecture and gameplay mechanics](docs/demo-game.md)
 * 🖥️ **Server Part (API):** `examples/TheLostGrid.Server` — screen logic, commands, and validators.
 * 📟 **Client Part (TUI):** `examples/TheLostGrid.Client` — a thin console client for rendering frames.
 

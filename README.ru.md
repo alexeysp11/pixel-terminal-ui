@@ -120,7 +120,7 @@ builder.Services.AddMongoUserSessionRepository(
 
 ![The Lost Grid Gameplay](docs/img/gameplay-demo.gif)
 
-* 📖 [Подробный разбор архитектуры игры и механики геймплея](docs/the-lost-grid/README.ru.md)
+* 📖 [Подробный разбор архитектуры игры и механики геймплея](docs/demo-game.ru.md)
 * 🖥️ **Серверная часть (API):** `examples/TheLostGrid.Server` — логика экранов, команд и валидаторов.
 * 📟 **Клиентская часть (TUI):** `examples/TheLostGrid.Client` — тонкий консольный тонкий клиент для отрисовки кадров.
 
