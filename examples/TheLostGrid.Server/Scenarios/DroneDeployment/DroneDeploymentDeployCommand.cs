@@ -1,0 +1,153 @@
+﻿using PixelTerminalUI.StatelessEngine.Commands.CommandContexts;
+using PixelTerminalUI.StatelessEngine.Commands.Core;
+using PixelTerminalUI.StatelessEngine.Screens;
+using TheLostGrid.Server.Domain.Enums;
+using TheLostGrid.Server.Scenarios.SectorNavigation;
+using TheLostGrid.Server.Scenarios.SectorScanner;
+
+namespace TheLostGrid.Server.Scenarios.DroneDeployment;
+
+/// <summary>
+/// Controls the backend execution flow managing physical reconnaissance drone fabrication and field deployment cycles.
+/// </summary>
+public sealed class DroneDeploymentDeployCommand : Command<DroneDeploymentState>
+{
+    /// <summary>
+    /// Gets the unique structural identifier assigned to this runtime transaction frame instance.
+    /// </summary>
+    public override Guid Id { get; } = Guid.NewGuid();
+
+    /// <summary>
+    /// Gets or sets the target interaction element identifier bound to this automated processing loop.
+    /// </summary>
+    public override Guid WidgetId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the internal state tracking configuration for single-step transaction boundaries.
+    /// </summary>
+    public override DroneDeploymentState State { get; set; } = DroneDeploymentState.AwaitingCommand;
+
+    /// <summary>
+    /// Gets or init the unique operational archetype signature for the active session boundary frame.
+    /// </summary>
+    public required CharacterType CharacterType { get; init; }
+
+    /// <summary>
+    /// Evaluates technical asset allocation rules and executes deployment probability trees before switching active view matrices.
+    /// </summary>
+    /// <param name="context">The localized communication pipeline carrying external request metadata parameters.</param>
+    /// <returns>An asynchronous task wrapping a boolean indicator signifying operational pipeline state changes.</returns>
+    public override async ValueTask<bool> ExecuteAsync(ICommandContext context)
+    {
+        if (context == null)
+        {
+            return false;
+        }
+
+        if (context.Screen is not DroneDeploymentScreen operationalScreen)
+        {
+            return false;
+        }
+
+        switch (State)
+        {
+            case DroneDeploymentState.AwaitingCommand:
+                int actionCode = ParseDroneAction(context.InputValue);
+
+                if (actionCode == -1)
+                {
+                    context.ErrorMessage = "INVALID OPTION! SELECT 1 OR 0";
+                    return false;
+                }
+
+                TerminalScreen nextScreen;
+                if (actionCode == 1)
+                {
+                    // Enforce minimum resource verification limits before spawning a physical drone hardware component
+                    if (operationalScreen.Energy < 10)
+                    {
+                        context.ErrorMessage = "NOT ENOUGH ENERGY (10 ENG REQUIRED)";
+                        return false;
+                    }
+
+                    // Simulate drone deployment risk evaluation via cryptographic network layers roll calculations
+                    int successRoll = Random.Shared.Next(1, 101);
+                    bool isDeploymentSuccessful = successRoll <= 70;
+
+                    int updatedEnergy;
+                    int updatedCredits;
+                    string resultMessage;
+
+                    if (isDeploymentSuccessful)
+                    {
+                        updatedEnergy = Math.Max(0, operationalScreen.Energy - 10);
+                        updatedCredits = operationalScreen.Credits + 15;
+                        resultMessage = "SUCCESS: ARTIFACT EXTRACTED! +15 CR";
+                    }
+                    else
+                    {
+                        // Total hardware collision destruction triggers increased operational energy mitigation costs
+                        updatedEnergy = Math.Max(0, operationalScreen.Energy - 20);
+                        updatedCredits = operationalScreen.Credits;
+                        resultMessage = "CRITICAL: DRONE DESTROYED BY TURRETS!";
+                    }
+
+                    // Route to the shared SectorScannerScreen screen layout passing the calculated payload data
+                    nextScreen = new SectorScannerScreen(
+                        CharacterType,
+                        updatedEnergy,
+                        updatedCredits,
+                        resultMessage)
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = nameof(SectorScannerScreen),
+                        CharacterType = CharacterType,
+                        SessionId = context.SessionId
+                    };
+                }
+                else
+                {
+                    // Unconditional safe navigation retreat route back to the sector navigation command post
+                    nextScreen = new SectorNavigationScreen(CharacterType, operationalScreen.Energy, operationalScreen.Credits)
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = nameof(SectorNavigationScreen),
+                        SessionId = context.SessionId
+                    };
+                }
+
+                await context.SessionRepository.SaveActiveScreenAsync(context.SessionId, nextScreen);
+                return true;
+
+            default:
+                return false;
+        }
+    }
+
+    /// <summary>
+    /// Processes incoming textual representations to parse automated hardware launch sequences.
+    /// </summary>
+    /// <param name="inputValue">The untrusted raw input value payload sequence string.</param>
+    /// <returns>A concrete action indicator code mapping to deployment decisions or an error signature.</returns>
+    private static int ParseDroneAction(string inputValue)
+    {
+        if (inputValue == null)
+        {
+            return -1;
+        }
+
+        ReadOnlySpan<char> inputSpan = inputValue.AsSpan().Trim();
+
+        if (inputSpan.Equals("1".AsSpan(), StringComparison.Ordinal))
+        {
+            return 1;
+        }
+
+        if (inputSpan.Equals("0".AsSpan(), StringComparison.Ordinal))
+        {
+            return 0;
+        }
+
+        return -1;
+    }
+}

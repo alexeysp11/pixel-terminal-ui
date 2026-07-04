@@ -59,12 +59,12 @@ public sealed record CharacterCreationScreen : TerminalScreen
             Left = 2,
             Top = 6,
             Width = 35,
-            Value = "Choose Class (HACKER/RIGGER):",
+            Value = "Choose Operator Class:",
             Visible = true,
             Foreground = ConsoleColor.DarkGray
         };
 
-        RegisterOperatorCommand registrationCommand = new();
+        CharacterCreationSubmitCommand registrationCommand = new();
 
         TextEntryWidget classInput = new()
         {
@@ -75,7 +75,7 @@ public sealed record CharacterCreationScreen : TerminalScreen
             Width = 15,
             Required = true,
             EmptyEnterSymbol = '.',
-            Hint = "TYPE CLASS TO BOOT SYSTEM",
+            Hint = "TYPE [H] HACKER OR [R] RIGGER",
             Visible = true,
             Command = registrationCommand,
             Value = string.Empty,

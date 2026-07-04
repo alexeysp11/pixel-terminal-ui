@@ -1,4 +1,5 @@
 ﻿using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Moq;
 using PixelTerminalUI.Contracts.Common;
 using PixelTerminalUI.Contracts.Dto;
@@ -8,11 +9,13 @@ using PixelTerminalUI.StatelessEngine.Commands.DismissError;
 using PixelTerminalUI.StatelessEngine.Extensions.ServiceCollectionExtensions;
 using PixelTerminalUI.StatelessEngine.Factories.StartupScreen;
 using PixelTerminalUI.StatelessEngine.Factories.TerminalErrorScreen;
+using PixelTerminalUI.StatelessEngine.Navigation;
 using PixelTerminalUI.StatelessEngine.Rendering.Core;
 using PixelTerminalUI.StatelessEngine.Repositories;
 using PixelTerminalUI.StatelessEngine.RequestPipeline;
 using PixelTerminalUI.StatelessEngine.ResponseBuilders;
 using PixelTerminalUI.StatelessEngine.Screens;
+using PixelTerminalUI.StatelessEngine.SymbolHandling;
 using PixelTerminalUI.StatelessEngine.Validators;
 using PixelTerminalUI.StatelessEngine.Validators.ValidationProviders;
 using PixelTerminalUI.StatelessEngine.Widgets;
@@ -21,18 +24,22 @@ namespace PixelTerminalUI.StatelessEngine.Tests.RequestPipeline;
 
 public sealed class RequestPipelineHandlerTests
 {
+    private readonly Mock<ILogger<RequestPipelineHandler>> _loggerMock;
     private readonly Mock<IStatelessRenderer> _rendererMock;
     private readonly Mock<ITerminalSessionRepository> _sessionRepositoryMock;
     private readonly Mock<IStartupScreenFactory> _startupScreenFactoryMock;
     private readonly Mock<ITerminalErrorScreenFactory> _errorScreenFactoryMock;
     private readonly Mock<IAdaptiveResponseBuilder> _adaptiveResponseBuilderMock = new();
     private readonly Mock<IScreenValidationProvider> _validationProviderMock = new();
+    private readonly Mock<ISpecialSymbolHandler> _specialSymbolHandlerMock = new();
+    private readonly Mock<IFocusManager> _focusManagerMock = new();
     private readonly PixelTerminalUIOptions _defaultOptions = new();
 
     private readonly RequestPipelineHandler _sut;
 
     public RequestPipelineHandlerTests()
     {
+        _loggerMock = new Mock<ILogger<RequestPipelineHandler>>();
         _rendererMock = new Mock<IStatelessRenderer>();
         _sessionRepositoryMock = new Mock<ITerminalSessionRepository>();
         _startupScreenFactoryMock = new Mock<IStartupScreenFactory>();
@@ -64,14 +71,31 @@ public sealed class RequestPipelineHandlerTests
             .Setup(p => p.GetValidatorsForScreen(It.IsAny<string>()))
             .Returns([]);
 
+        // Configure the injected symbol handler mock to replicate concrete system navigation routes for the cancel token
+        _specialSymbolHandlerMock
+            .Setup(h => h.HandleSymbolAsync(It.IsAny<TerminalScreen>(), "-x"))
+            .ReturnsAsync(new SymbolHandlingResult
+            {
+                Action = SymbolResultActionType.NavigateToParentScreen
+            });
+        _specialSymbolHandlerMock
+            .Setup(h => h.HandleSymbolAsync(It.IsAny<TerminalScreen>(), string.Empty))
+            .ReturnsAsync(new SymbolHandlingResult
+            {
+                Action = SymbolResultActionType.ShiftFocusForward
+            });
+
         _sut = new RequestPipelineHandler(
+            _loggerMock.Object,
             _defaultOptions,
             _rendererMock.Object,
             _sessionRepositoryMock.Object,
             _startupScreenFactoryMock.Object,
             _errorScreenFactoryMock.Object,
             _adaptiveResponseBuilderMock.Object,
-            _validationProviderMock.Object);
+            _validationProviderMock.Object,
+            _specialSymbolHandlerMock.Object,
+            _focusManagerMock.Object);
     }
 
     [Fact]
@@ -242,7 +266,7 @@ public sealed class RequestPipelineHandlerTests
 
         _validationProviderMock
             .Setup(p => p.GetValidatorsForScreen("UsersScreen"))
-            .Returns(new ValidationDelegate[] { failingValidator });
+            .Returns([failingValidator]);
 
         // Настраиваем мок фабрики ошибок, чтобы избежать NullReferenceException
         _errorScreenFactoryMock
@@ -490,13 +514,16 @@ public sealed class RequestPipelineHandlerTests
             .Returns(dummyStartupScreen);
 
         RequestPipelineHandler sut = new(
+            _loggerMock.Object,
             _defaultOptions,
             rendererMock.Object,
             sessionRepositoryMock.Object,
             startupScreenFactoryMock.Object,
             _errorScreenFactoryMock.Object,
             adaptiveResponseBuilderMock.Object,
-            validationProviderMock.Object);
+            validationProviderMock.Object,
+            _specialSymbolHandlerMock.Object,
+            _focusManagerMock.Object);
 
         // Act
         TerminalResponse response = await sut.HandleInputAsync(request);
@@ -564,6 +591,11 @@ public sealed class RequestPipelineHandlerTests
         _sessionRepositoryMock
             .Setup(r => r.GetActiveScreenAsync(sessionId, default))
             .ReturnsAsync(parentScreen);
+
+        // Configure the focus manager mock to yield the correct contiguous widget boundary identifier
+        _focusManagerMock
+            .Setup(f => f.GetNextFocus(parentScreen))
+            .Returns(secondFieldId);
 
         // Act
         TerminalResponse response = await _sut.HandleInputAsync(emptyEnterRequest);
@@ -833,13 +865,16 @@ public sealed class RequestPipelineHandlerTests
 
         // Injecting the enabled options configuration descriptor block explicitly into a temporary test pipeline
         RequestPipelineHandler handlerWithBuffering = new(
+            _loggerMock.Object,
             enabledOptions,
             _rendererMock.Object,
             _sessionRepositoryMock.Object,
             _startupScreenFactoryMock.Object,
             _errorScreenFactoryMock.Object,
             _adaptiveResponseBuilderMock.Object,
-            _validationProviderMock.Object);
+            _validationProviderMock.Object,
+            _specialSymbolHandlerMock.Object,
+            _focusManagerMock.Object);
 
         // Act
         TerminalResponse response = await handlerWithBuffering.HandleInputAsync(request);
@@ -887,13 +922,16 @@ public sealed class RequestPipelineHandlerTests
 
         // Injecting the disabled options reference to test the optimized shortcut bypass routing
         RequestPipelineHandler handlerWithoutBuffering = new(
+            _loggerMock.Object,
             disabledOptions,
             _rendererMock.Object,
             _sessionRepositoryMock.Object,
             _startupScreenFactoryMock.Object,
             _errorScreenFactoryMock.Object,
             _adaptiveResponseBuilderMock.Object,
-            _validationProviderMock.Object);
+            _validationProviderMock.Object,
+            _specialSymbolHandlerMock.Object,
+            _focusManagerMock.Object);
 
         // Act
         TerminalResponse response = await handlerWithoutBuffering.HandleInputAsync(request);

@@ -112,17 +112,35 @@ builder.Services.AddMongoUserSessionRepository(
 ```
 </details>
 
-## 🐳 Quick Start in Docker
+---
 
-You can launch the ready-made demo game and all the necessary infrastructure with a single command. The framework will automatically set up the engine core server, Redis, and a web interface for data inspection.
+## 🕹️ Demo Application
+
+To see the framework in action, you can run **The Lost Grid** — a text-based demo game written to showcase the capabilities of `PixelTerminalUI`.
+
+![The Lost Grid Gameplay](docs/img/gameplay-demo.gif)
+
+* 📖 [Detailed analysis of the game architecture and gameplay mechanics](docs/demo-game.md)
+* 🖥️ **Server Part (API):** `examples/TheLostGrid.Server` — screen logic, commands, and validators.
+* 📟 **Client Part (TUI):** `examples/TheLostGrid.Client` — a thin console client for rendering frames.
+
+> ℹ️ **Network Loop:** Input is transaction-based. The client sends a single network payload only when the user presses `Enter` instead of streaming every keystroke.
+
+### 🐳 Running in Docker
+
+You can deploy a ready-made demo game and all the necessary infrastructure with a single command. The framework will automatically set up the engine core server, a high-performance distributed Redis cache, and a user-friendly web control panel:
 
 ```bash
+# 1. Start the core server and Redis cache with one command in the background
 docker compose up -d --build
+
+#2. Connect using a thin TUI client directly from the server console
+docker exec -it pixel_terminal_app env TERMINAL_SERVER_URL=http://localhost:8080 TERM=xterm-256color dotnet /app/client/TheLostGrid.Client.dll
 ```
 
 After successfully deploying the containers, the following local endpoints will be available:
-* 📑 **Swagger Server API:** `http://localhost:5221/swagger` — for sending commands and testing BDUI screen generation.
-* 🖥️ **Redis Commander Admin Panel:** `http://localhost:8082` — for visually analyzing the field structure within **Redis Hash** sessions in real time.
+* 📟 **Swagger Server API:** `http://localhost:5221/swagger` — for manually sending commands and testing the generation of BDUI screens.
+* 🖥️ **Redis Commander Panel:** `http://localhost:8082` — for visually analyzing the structure of fields within **Redis Hash** sessions in real time.
 
 ---
 
@@ -136,6 +154,6 @@ The project is being developed as an experimental R&D sandbox. Current implement
 - [x] **Redis Hash Persistence:** Migrating hot UI state and frame buffers from MongoDB to Redis Hash atomic fields to reduce memory allocations ([Issue #2](https://github.com/alexeysp11/pixel-terminal-ui/issues/2)).
 
 ### ⏳ In Development & Backlog
-- [ ] **Interactive Form Input:** Fully handle control focus and implement data entry scenarios within form text fields ([Issue #1](https://github.com/alexeysp11/pixel-terminal-ui/issues/1)).
+- [ ] **Server-Driven Focus & Inline Input Cursor**: Implementing server-side coordinate mapping for focused text entries. This enables rendering the blinking input cursor (`_`) directly inside the pixel matrix layout instead of handling transactions via the bottom console input line ([Issue #1](https://github.com/alexeysp11/pixel-terminal-ui/issues/1)).
 - [ ] **Resilient CLI Client:** Refactoring the console thin client host to use `Microsoft.Extensions.Hosting`, moving configurations to AppSettings, and implementing `Polly` retry policies for a stable connection ([Issue #3](https://github.com/alexeysp11/pixel-terminal-ui/issues/3)).
 - [ ] **Observability Extension:** Integration of the OpenTelemetry Lightweight Agent (OTLP) to automatically collect Kestrel metrics and trace command execution chains without adding codebase bloat.

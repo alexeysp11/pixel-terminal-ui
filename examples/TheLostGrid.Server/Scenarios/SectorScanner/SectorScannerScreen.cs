@@ -1,16 +1,24 @@
 ﻿using PixelTerminalUI.StatelessEngine.Screens;
 using PixelTerminalUI.StatelessEngine.Widgets;
-using TheLostGrid.Server.Enums;
+using TheLostGrid.Server.Domain.Enums;
 
 namespace TheLostGrid.Server.Scenarios.SectorScanner;
 
 public sealed record SectorScannerScreen : TerminalScreen
 {
-    public required CharacterType CharacterType { get; init; }
+    public CharacterType CharacterType { get; init; }
+    public int Energy { get; init; }
+    public int Credits { get; init; }
+    public string ScanResultLog { get; init; }
 
-    public SectorScannerScreen()
+    public SectorScannerScreen(CharacterType characterType, int energy, int credits, string scanResultLog)
     {
-        Name = "SectorScannerScreen";
+        CharacterType = characterType;
+        Energy = energy;
+        Credits = credits;
+        ScanResultLog = scanResultLog;
+
+        Name = nameof(SectorScannerScreen);
         Width = 40;
         Height = 12;
 
@@ -25,15 +33,53 @@ public sealed record SectorScannerScreen : TerminalScreen
             Visible = true
         };
 
+        string statusText = $"ENG: {energy}% | CR: {credits}";
+        int calculatedLeftOffset = (Width - statusText.Length) / 2;
+
         TextWidget statusLabel = new()
         {
             Id = Guid.NewGuid(),
-            Name = "ScannerStatus",
+            Name = "ScannerTelemetryStatus",
+            Left = calculatedLeftOffset,
+            Top = 2,
+            Width = statusText.Length,
+            Value = statusText,
+            Visible = true,
+            Foreground = ConsoleColor.Cyan
+        };
+
+        // Parse and safely segment the incoming text log to extract the primary event state
+        string firstLineText = scanResultLog.Contains('.')
+            ? scanResultLog[..(scanResultLog.IndexOf('.') + 1)]
+            : scanResultLog;
+
+        TextWidget statusLogLabel = new()
+        {
+            Id = Guid.NewGuid(),
+            Name = "ScannerStatusLine1",
             Left = 2,
-            Top = 3,
-            Width = 35,
-            Value = "Scanning signatures... Clear.",
-            Visible = true
+            Top = 4,
+            Width = 36,
+            Value = firstLineText,
+            Visible = true,
+            Foreground = ConsoleColor.Green
+        };
+
+        // Extract the trailing computational reward metric or fallback gracefully to an empty block
+        string secondLineText = scanResultLog.Contains('.')
+            ? scanResultLog[(scanResultLog.IndexOf('.') + 1)..].Trim()
+            : string.Empty;
+
+        TextWidget rewardLogLabel = new()
+        {
+            Id = Guid.NewGuid(),
+            Name = "ScannerStatusLine2",
+            Left = 2,
+            Top = 5,
+            Width = 36,
+            Value = secondLineText,
+            Visible = !string.IsNullOrEmpty(secondLineText),
+            Foreground = ConsoleColor.Yellow
         };
 
         TextWidget backLabel = new()
@@ -41,17 +87,16 @@ public sealed record SectorScannerScreen : TerminalScreen
             Id = Guid.NewGuid(),
             Name = "BackLabel",
             Left = 2,
-            Top = 5,
+            Top = 7, // Shifted downward by one unit to accommodate the dual line text layout
             Width = 35,
             Value = " [0] RETURN TO MAIN HUB",
-            Visible = true
+            Visible = true,
+            Foreground = ConsoleColor.DarkGray
         };
 
-        // We reuse or target the specific machine-state command
-        ScanSectorsCommand scanCommand = new()
+        SectorScannerScanCommand scanCommand = new()
         {
-            CharacterType = CharacterType,
-            CurrentStep = ScannerStep.AwaitingScreenResponse
+            CharacterType = characterType
         };
 
         TextEntryWidget scannerInput = new()
@@ -59,7 +104,7 @@ public sealed record SectorScannerScreen : TerminalScreen
             Id = Guid.NewGuid(),
             Name = "ScannerInput",
             Left = 2,
-            Top = 8,
+            Top = 9,
             Width = 10,
             Required = true,
             EmptyEnterSymbol = '.',
@@ -72,7 +117,8 @@ public sealed record SectorScannerScreen : TerminalScreen
 
         scanCommand.WidgetId = scannerInput.Id;
 
-        Widgets = [titleLabel, statusLabel, backLabel, scannerInput];
+        // Bind the newly expanded dynamic widget ecosystem components into the active viewport layout
+        Widgets = [titleLabel, statusLabel, statusLogLabel, rewardLogLabel, backLabel, scannerInput];
         FocusedEntryWidgetId = scannerInput.Id;
     }
 }

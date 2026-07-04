@@ -10,6 +10,10 @@ using PixelTerminalUI.Persistence.Redis.Extensions.ServiceCollectionExtensions;
 using PixelTerminalUI.StatelessEngine.Commands.DismissError;
 using PixelTerminalUI.StatelessEngine.Extensions.ServiceCollectionExtensions;
 using PixelTerminalUI.StatelessEngine.Validators;
+using PixelTerminalUI.StatelessEngine.SymbolHandling;
+using TheLostGrid.Server.Scenarios.Help;
+using TheLostGrid.Server.Scenarios.PowerGridTerminal;
+using TheLostGrid.Server.Infrastructure.Interceptors;
 
 namespace TheLostGrid.Server;
 
@@ -41,34 +45,45 @@ public sealed class Program
             .WithSessionTimeout(TimeSpan.FromMinutes(30))
             .RegisterCustomScreens(custom => custom
                 // Screens registration
+                .RegisterScreen<HelpScreen>()
                 .RegisterScreen<WelcomeScreen>()
                 .RegisterScreen<CharacterCreationScreen>()
                 .RegisterScreen<SectorNavigationScreen>()
                 .RegisterScreen<TerminalHackScreen>()
                 .RegisterScreen<SectorScannerScreen>()
                 .RegisterScreen<DroneDeploymentScreen>()
+                .RegisterScreen<PowerGridTerminalScreen>()
 
                 // Commands registration
-                .RegisterCommand<ConnectNeuralLinkCommand>()
-                .RegisterCommand<RegisterOperatorCommand>()
-                .RegisterCommand<ExploreSectorCommand>()
-                .RegisterCommand<SubmitHackKeyCommand>()
-                .RegisterCommand<ScanSectorsCommand>()
+                .RegisterCommand<HelpDismissCommand>()
+                .RegisterCommand<WelcomeStartGameCommand>()
+                .RegisterCommand<CharacterCreationSubmitCommand>()
+                .RegisterCommand<SectorNavigationExploreCommand>()
+                .RegisterCommand<TerminalHackSubmitKeyCommand>()
+                .RegisterCommand<SectorScannerScanCommand>()
                 .RegisterCommand<DismissErrorCommand>()
-                .RegisterCommand<DeployDroneCommand>());
+                .RegisterCommand<DroneDeploymentDeployCommand>()
+                .RegisterCommand<PowerGridTerminalBuyEnergyCommand>());
 
         // Attach layout level presentation validation constraints routines
         builder.Services.AddScreenValidators(options =>
         {
             options.ForScreen(nameof(CharacterCreationScreen))
-                   .Add((screen, input) => input.Length > 10
-                       ? ValidationResult.Fail("Input exceeds limit!")
+                   .Add((screen, input) => input.Length > 15
+                       ? ValidationResult.Fail("OVERFLOW: Max 15 characters allowed!")
                        : ValidationResult.Success());
+        });
 
-            options.ForScreen(nameof(WelcomeScreen))
-                   .Add((screen, input) => input == "-m"
-                       ? ValidationResult.Fail("Menu is not available yet!")
-                       : ValidationResult.Success());
+        // Intercept and configure the singleton special symbol handler with game-specific macro routines
+        builder.Services.AddSingleton<ISpecialSymbolHandler>(provider =>
+        {
+            IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
+            GameplayInputInterceptor interceptor = new(scopeFactory);
+            SpecialSymbolHandler handler = new()
+            {
+                CustomInterceptor = interceptor.InterceptSymbolsAsync
+            };
+            return handler;
         });
 
         builder.Services.AddModuleEndpoints();

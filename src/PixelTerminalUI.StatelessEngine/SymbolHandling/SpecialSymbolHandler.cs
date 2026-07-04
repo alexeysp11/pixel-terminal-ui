@@ -3,46 +3,31 @@ using PixelTerminalUI.StatelessEngine.Widgets;
 
 namespace PixelTerminalUI.StatelessEngine.SymbolHandling;
 
+/// <summary>
+/// Provides the default implementation for evaluating, routing, and intercepting systemic 
+/// operational console inputs, macro shortcuts, and navigational control tokens.
+/// </summary>
 public sealed class SpecialSymbolHandler : ISpecialSymbolHandler
 {
-    private static List<TextWidget> GetSortedEditableWidgets(TerminalScreen screen)
-    {
-        List<TextWidget> editableWidgets = [];
+    /// <summary>
+    /// Gets or sets an optional custom asynchronous delegate to intercept specialized game or domain specific control sequences 
+    /// before the core engine executes standard terminal routing operations.
+    /// </summary>
+    public Func<TerminalScreen, string, ValueTask<SymbolHandlingResult>>? CustomInterceptor { get; set; }
 
-        // Filter out visible inputs using single-pass iteration to protect performance
-        foreach (TextWidget widget in screen.Widgets)
+    /// <inheritdoc/>
+    public async ValueTask<SymbolHandlingResult> HandleSymbolAsync(TerminalScreen screen, string userInput)
+    {
+        // Execute the custom app-level interceptor if registered
+        if (CustomInterceptor is not null)
         {
-            if (widget.Visible && (widget is TextEntryWidget || widget is PasswordEntryWidget))
+            SymbolHandlingResult customResult = await CustomInterceptor(screen, userInput);
+            if (customResult.Action != SymbolResultActionType.NotHandled)
             {
-                editableWidgets.Add(widget);
+                return customResult;
             }
         }
 
-        // Sort execution mapping matrix by TabIndex, then Top rows, then Left columns
-        editableWidgets.Sort((TextWidget left, TextWidget right) =>
-        {
-            int leftTab = left.TabIndex ?? int.MaxValue;
-            int rightTab = right.TabIndex ?? int.MaxValue;
-            int tabCompare = leftTab.CompareTo(rightTab);
-            if (tabCompare != 0)
-            {
-                return tabCompare;
-            }
-
-            int topCompare = left.Top.CompareTo(right.Top);
-            if (topCompare != 0)
-            {
-                return topCompare;
-            }
-
-            return left.Left.CompareTo(right.Left);
-        });
-
-        return editableWidgets;
-    }
-
-    public SymbolHandlingResult HandleSymbol(TerminalScreen screen, string userInput)
-    {
         // Intercept global application termination request
         if (userInput == "-q")
         {
@@ -114,5 +99,41 @@ public sealed class SpecialSymbolHandler : ISpecialSymbolHandler
         }
 
         return SymbolHandlingResult.NotHandled();
+    }
+
+    private static List<TextWidget> GetSortedEditableWidgets(TerminalScreen screen)
+    {
+        List<TextWidget> editableWidgets = [];
+
+        // Filter out visible inputs using single-pass iteration to protect performance
+        foreach (TextWidget widget in screen.Widgets)
+        {
+            if (widget.Visible && (widget is TextEntryWidget || widget is PasswordEntryWidget))
+            {
+                editableWidgets.Add(widget);
+            }
+        }
+
+        // Sort execution mapping matrix by TabIndex, then Top rows, then Left columns
+        editableWidgets.Sort((TextWidget left, TextWidget right) =>
+        {
+            int leftTab = left.TabIndex ?? int.MaxValue;
+            int rightTab = right.TabIndex ?? int.MaxValue;
+            int tabCompare = leftTab.CompareTo(rightTab);
+            if (tabCompare != 0)
+            {
+                return tabCompare;
+            }
+
+            int topCompare = left.Top.CompareTo(right.Top);
+            if (topCompare != 0)
+            {
+                return topCompare;
+            }
+
+            return left.Left.CompareTo(right.Left);
+        });
+
+        return editableWidgets;
     }
 }

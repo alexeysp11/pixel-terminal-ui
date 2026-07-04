@@ -2,12 +2,14 @@
 using Microsoft.Extensions.Logging;
 using PixelTerminalUI.StatelessEngine.Factories.StartupScreen;
 using PixelTerminalUI.StatelessEngine.Factories.TerminalErrorScreen;
+using PixelTerminalUI.StatelessEngine.Navigation;
 using PixelTerminalUI.StatelessEngine.Rendering.Core;
 using PixelTerminalUI.StatelessEngine.Rendering.Registries;
 using PixelTerminalUI.StatelessEngine.Rendering.WidgetRendering;
 using PixelTerminalUI.StatelessEngine.RequestPipeline;
 using PixelTerminalUI.StatelessEngine.ResponseBuilders;
 using PixelTerminalUI.StatelessEngine.Screens;
+using PixelTerminalUI.StatelessEngine.SymbolHandling;
 using PixelTerminalUI.StatelessEngine.Validators.ValidationProviders;
 using PixelTerminalUI.StatelessEngine.Widgets;
 
@@ -27,6 +29,8 @@ public static class PixelTerminalUiExtensions
         configure?.Invoke(options);
         services.AddSingleton(options);
 
+        services.AddScoped<IFocusManager, FocusManager>();
+        services.AddScoped<ISpecialSymbolHandler, SpecialSymbolHandler>();
         services.AddScoped<IRequestPipelineHandler, RequestPipelineHandler>();
 
         // Register the registry using its explicit interface abstraction

@@ -7,9 +7,12 @@ namespace TheLostGrid.Client;
 
 public static class Program
 {
+    private static readonly string ServerUrl =
+        Environment.GetEnvironmentVariable("TERMINAL_SERVER_URL") ?? "http://localhost:5221/";
+
     private static readonly HttpClient HttpClient = new()
     {
-        BaseAddress = new Uri("http://localhost:5221/"),
+        BaseAddress = new Uri(ServerUrl),
         Timeout = new TimeSpan(hours: 0, minutes: 5, seconds: 0)
     };
 

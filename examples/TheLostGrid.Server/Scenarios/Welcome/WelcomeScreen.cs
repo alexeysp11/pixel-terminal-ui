@@ -41,7 +41,7 @@ public sealed record WelcomeScreen : TerminalScreen
             Left = 4,
             Top = 5,
             Width = 31,
-            Value = "-q: Quit  -m: Menu  -b: Back",
+            Value = "-q: Quit  -h: Help  -b: Back",
             Visible = true,
             Foreground = ConsoleColor.DarkCyan
         };
@@ -58,7 +58,7 @@ public sealed record WelcomeScreen : TerminalScreen
             Foreground = ConsoleColor.Gray
         };
 
-        ConnectNeuralLinkCommand connectionCommand = new();
+        WelcomeStartGameCommand connectionCommand = new();
 
         TextEntryWidget hiddenInput = new()
         {

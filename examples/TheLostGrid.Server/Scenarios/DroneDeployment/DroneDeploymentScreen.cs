@@ -1,16 +1,24 @@
 ﻿using PixelTerminalUI.StatelessEngine.Screens;
 using PixelTerminalUI.StatelessEngine.Widgets;
-using TheLostGrid.Server.Enums;
+using TheLostGrid.Server.Domain.Enums;
 
 namespace TheLostGrid.Server.Scenarios.DroneDeployment;
 
 public sealed record DroneDeploymentScreen : TerminalScreen
 {
-    public required CharacterType CharacterType { get; init; }
+    public CharacterType CharacterType { get; init; }
 
-    public DroneDeploymentScreen()
+    public int Energy { get; init; }
+
+    public int Credits { get; init; }
+
+    public DroneDeploymentScreen(CharacterType characterType, int energy, int credits)
     {
-        Name = "DroneDeploymentScreen";
+        CharacterType = characterType;
+        Energy = energy;
+        Credits = credits;
+
+        Name = nameof(DroneDeploymentScreen);
         Width = 40;
         Height = 12;
 
@@ -18,54 +26,64 @@ public sealed record DroneDeploymentScreen : TerminalScreen
         {
             Id = Guid.NewGuid(),
             Name = "DroneTitleLabel",
-            Left = 6,
+            Left = 8,
             Top = 1,
-            Width = 28,
-            Value = "--- RCC DRONE LINK ACTIVE ---",
-            Visible = true,
-            Foreground = ConsoleColor.Gray
+            Width = 24,
+            Value = "== DRONE BAY CONTROL ==",
+            Visible = true
         };
+
+        string statusText = $"ENG: {energy}% | CR: {credits}";
+        int calculatedLeftOffset = (Width - statusText.Length) / 2;
 
         TextWidget statusLabel = new()
         {
             Id = Guid.NewGuid(),
             Name = "DroneStatusLabel",
-            Left = 2,
-            Top = 3,
-            Width = 36,
-            Value = "PROBE: Recon-01 | STATUS: Hovering",
+            Left = calculatedLeftOffset,
+            Top = 2,
+            Width = statusText.Length,
+            Value = statusText,
             Visible = true,
-            Foreground = ConsoleColor.Gray
+            Foreground = ConsoleColor.Cyan
         };
 
-        TextWidget telemetryLabel = new()
+        TextWidget optionOneLabel = new()
         {
             Id = Guid.NewGuid(),
-            Name = "DroneTelemetryLabel",
+            Name = "DroneOption1",
             Left = 2,
             Top = 4,
-            Width = 36,
-            Value = "SIGNAL: 98% | FUEL: Operational",
+            Width = 35,
+            Value = "[1] DEPLOY RECON DRONE (-10 ENG)",
             Visible = true,
-            Foreground = ConsoleColor.Gray
+            Foreground = ConsoleColor.DarkGray
         };
 
-        DeployDroneCommand deployCommand = new()
+        TextWidget optionZeroLabel = new()
         {
-            State = DroneDeploymentState.AwaitingCommand,
-            CharacterType = CharacterType
+            Id = Guid.NewGuid(),
+            Name = "DroneOption0",
+            Left = 2,
+            Top = 5,
+            Width = 35,
+            Value = "[0] RETURN TO NAVIGATION HUB",
+            Visible = true,
+            Foreground = ConsoleColor.DarkGray
         };
+
+        DroneDeploymentDeployCommand deployCommand = new() { CharacterType = characterType };
 
         TextEntryWidget droneInput = new()
         {
             Id = Guid.NewGuid(),
             Name = "DroneInput",
             Left = 2,
-            Top = 7,
-            Width = 15,
+            Top = 8,
+            Width = 10,
             Required = true,
             EmptyEnterSymbol = '.',
-            Hint = "ENTER 1 TO SCAN OR 0 TO DISCONNECT",
+            Hint = "SELECT DIRECTIVE CODE AND PRESS ENTER",
             Visible = true,
             Command = deployCommand,
             Value = string.Empty,
@@ -74,7 +92,7 @@ public sealed record DroneDeploymentScreen : TerminalScreen
 
         deployCommand.WidgetId = droneInput.Id;
 
-        Widgets = [titleLabel, statusLabel, telemetryLabel, droneInput];
+        Widgets = [titleLabel, statusLabel, optionOneLabel, optionZeroLabel, droneInput];
         FocusedEntryWidgetId = droneInput.Id;
     }
 }
