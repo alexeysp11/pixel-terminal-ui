@@ -2,10 +2,10 @@
 
 [English](README.md) | [Русский](README.ru.md)
 
-![.NET Version](https://img.shields.io/badge/.NET-8.0-blue?style=flat-square&logo=dotnet)
-![Architecture](https://img.shields.io/badge/Architecture-Backend--Driven%20UI-orange?style=flat-square)
-![State](https://img.shields.io/badge/State-True%20Stateless-brightgreen?style=flat-square)
-![MongoDB](https://img.shields.io/badge/Database-MongoDB-47A248?style=flat-square&logo=mongodb)
+![.NET Version](https://img.shields.io/badge/.NET-8.0-blue?style=square&logo=dotnet)
+![Architecture](https://img.shields.io/badge/Architecture-Backend--Driven%20UI-orange?style=square)
+![State](https://img.shields.io/badge/State-True%20Stateless-brightgreen?style=square)
+![Storage](https://img.shields.io/static/v1?label=Storage&message=Extensible%20%20Interface-driven&color=blue)
 
 **Stateless UI-движок** на базе архитектуры **Backend-Driven UI (BDUI)** для текстовых терминалов (TUI) на .NET 8.
 
@@ -135,7 +135,7 @@ builder.Services.AddMongoUserSessionRepository(
 docker compose up -d --build
 
 # 2. Подключиться с помощью тонкого TUI-клиента прямо внутри консоли сервера
-docker exec -it pixel_terminal_app env TERMINAL_SERVER_URL=http://localhost:8080 TERM=xterm-256color dotnet /app/client/TheLostGrid.Client.dll
+docker exec -it pixel_terminal_app env PIXEL_TERMINAL_SERVER_URL=http://localhost:8080 TERM=xterm-256color dotnet /app/client/TheLostGrid.Client.dll
 ```
 
 После успешного развертывания контейнеров вам станут доступны следующие локальные точки:

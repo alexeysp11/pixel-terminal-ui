@@ -50,7 +50,7 @@ public sealed class SectorNavigationExploreCommand : Command<OneStepCommandState
 
         if (chosenRoute == 0)
         {
-            context.ErrorMessage = "INVALID OPTION! SELECT 1 OR 2";
+            context.ErrorMessage = "INVALID OPTION! SELECT 1, 2 OR 3";
             return false;
         }
 
