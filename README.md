@@ -2,10 +2,10 @@
 
 [English](README.md) | [Русский](README.ru.md)
 
-![.NET Version](https://img.shields.io/badge/.NET-8.0-blue?style=flat-square&logo=dotnet)
-![Architecture](https://img.shields.io/badge/Architecture-Backend--Driven%20UI-orange?style=flat-square)
-![State](https://img.shields.io/badge/State-True%20Stateless-brightgreen?style=flat-square)
-![MongoDB](https://img.shields.io/badge/Database-MongoDB-47A248?style=flat-square&logo=mongodb)
+![.NET Version](https://img.shields.io/badge/.NET-8.0-blue?style=square&logo=dotnet)
+![Architecture](https://img.shields.io/badge/Architecture-Backend--Driven%20UI-orange?style=square)
+![State](https://img.shields.io/badge/State-True%20Stateless-brightgreen?style=square)
+![Storage](https://img.shields.io/static/v1?label=Storage&message=Extensible%20%20Interface-driven&color=blue)
 
 A **Stateless UI engine** based on **Backend-Driven UI (BDUI)** architecture designed for text terminals (TUI) running on .NET 8.
 
@@ -135,7 +135,7 @@ You can deploy a ready-made demo game and all the necessary infrastructure with 
 docker compose up -d --build
 
 #2. Connect using a thin TUI client directly from the server console
-docker exec -it pixel_terminal_app env TERMINAL_SERVER_URL=http://localhost:8080 TERM=xterm-256color dotnet /app/client/TheLostGrid.Client.dll
+docker exec -it pixel_terminal_app env PIXEL_TERMINAL_SERVER_URL=http://localhost:8080 TERM=xterm-256color dotnet /app/client/TheLostGrid.Client.dll
 ```
 
 After successfully deploying the containers, the following local endpoints will be available:

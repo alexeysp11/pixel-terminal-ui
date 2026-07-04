@@ -51,7 +51,7 @@ public sealed class SectorNavigationExploreCommandTests
             .BeFalse("because mismatched choices cannot trigger safe execution changes across our environment slices");
 
         _contextMock
-            .VerifySet(c => c.ErrorMessage = "INVALID OPTION! SELECT 1 OR 2",
+            .VerifySet(c => c.ErrorMessage = "INVALID OPTION! SELECT 1, 2 OR 3",
                 Times.Once,
                 "because an invalid command input sequence must generate transparent navigation tip blocks for the view layers");
 

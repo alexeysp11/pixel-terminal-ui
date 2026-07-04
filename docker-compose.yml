@@ -16,7 +16,7 @@ services:
       - Serilog__MinimumLevel__Override__Microsoft=Warning
       - Serilog__WriteTo__0__Name=Console
       - Serilog__WriteTo__1__Name=File
-      - Serilog__WriteTo__1__Args__path=/app/logs/log.txt
+      - Serilog__WriteTo__1__Args__path=/app/logs/server-.log
       - Serilog__WriteTo__1__Args__rollingInterval=Day
       - Serilog__WriteTo__1__Args__outputTemplate={Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}
     depends_on:
