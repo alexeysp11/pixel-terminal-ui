@@ -637,23 +637,6 @@ builder.Services
         .RegisterCommand<StartGameCommand>());
 ```
 
-<details>
-<summary>Вариант 2. Альтернативное подключение на базе MongoDB</summary>
-
-Если требуется классическая документо-ориентированная база данных, тот же самый контракт `ITerminalSessionRepository` перекрывается Mongo-плагином:
-
-```csharp
-// Подключение инфраструктуры хранения сессий в MongoDB
-builder.Services.AddMongoTerminalSessionRepository(
-    "mongodb://admin:secret_password_123@localhost:27017/?authSource=admin",
-    "TheLostGridGameDb",
-    custom => custom
-        .RegisterScreen<WelcomeScreen>()
-        .RegisterScreen<GamePlayScreen>()
-        .RegisterCommand<StartGameCommand>());
-```
-</details>
-
 > **Примечание об управлении данными и утилизации сессий:** 
 > 
 > Поскольку архитектура `PixelTerminalUI` является полностью Stateless, ядро фреймворка полностью изолировано от деталей реализации базы данных и оперирует исключительно абстракцией контракта `ITerminalSessionRepository`. Инфраструктурные плагины берут на себя атомарное управление сущностями под защитой сквозной оптимистичной блокировки (`Version`).

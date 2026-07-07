@@ -44,7 +44,7 @@ public sealed class DismissErrorCommand : Command<OneStepCommandState>
             return false;
         }
 
-        // 2. Load the historical parent screen layout model state out of the MongoDB transaction collection
+        // 2. Load the historical parent screen layout model state out of the transaction collection
         TerminalScreen? parentScreen = await context.SessionRepository.GetScreenByIdAsync(context.SessionId, currentScreen.ParentScreenId.Value);
         if (parentScreen == null)
         {
