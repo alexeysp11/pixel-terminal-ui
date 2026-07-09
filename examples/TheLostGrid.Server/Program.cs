@@ -14,6 +14,8 @@ using PixelTerminalUI.StatelessEngine.SymbolHandling;
 using TheLostGrid.Server.Scenarios.Help;
 using TheLostGrid.Server.Scenarios.PowerGridTerminal;
 using TheLostGrid.Server.Infrastructure.Interceptors;
+using PixelTerminalUI.Transport.Grpc;
+using ProtoBuf.Grpc.Server;
 
 namespace TheLostGrid.Server;
 
@@ -95,6 +97,9 @@ public sealed class Program
         builder.Logging.ClearProviders();
         builder.Logging.AddSerilog();
 
+        // Register high performance code-first gRPC services pipelines
+        builder.Services.AddCodeFirstGrpc();
+
         WebApplication app = builder.Build();
 
         // HTTP Processing Pipeline pipeline configuration mapping routines execution
@@ -105,6 +110,7 @@ public sealed class Program
         }
 
         // Wire up the scanned endpoints routing blocks automatically without polluting this file code structure
+        GrpcModelConfiguration.RegisterTerminalContracts();
         app.MapModuleEndpoints();
 
         app.Run();

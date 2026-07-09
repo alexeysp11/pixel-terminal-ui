@@ -75,7 +75,7 @@ public sealed class RequestPipelineHandler(
                 PixelBitPacker.Pack('S', background, foreground, 0)
                 ];
 
-                return new FullFrameResponse(sessionId, flatBuffer, 3, 1);
+                return new TerminalResponse(sessionId, Width: 3, Height: 1, FullFrame: new FullFramePayload(flatBuffer));
             }
 
             if (symbolResult.Action == SymbolResultActionType.NavigateToParentScreen)

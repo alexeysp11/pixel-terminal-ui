@@ -34,7 +34,7 @@ public sealed class AdaptiveResponseBuilder : IAdaptiveResponseBuilder
 
         if (historicalBuffer is null || historicalBuffer.Length != totalCellsCount)
         {
-            return new FullFrameResponse(sessionId, currentBuffer, width, height);
+            return new TerminalResponse(sessionId, width, height, FullFrame: new FullFramePayload(currentBuffer));
         }
 
         PixelMutation[] pooledMutations = ArrayPool<PixelMutation>.Shared.Rent(totalCellsCount);
@@ -52,18 +52,18 @@ public sealed class AdaptiveResponseBuilder : IAdaptiveResponseBuilder
             double changeRatio = (double)mutationCount / totalCellsCount;
             if (changeRatio > ChangeThreshold)
             {
-                return new FullFrameResponse(sessionId, currentBuffer, width, height);
+                return new TerminalResponse(sessionId, width, height, FullFrame: new FullFramePayload(currentBuffer));
             }
 
             if (mutationCount == 0)
             {
-                return new DeltaResponse(sessionId, [], width, height);
+                return new TerminalResponse(sessionId, width, height, Delta: new DeltaPayload([]));
             }
 
             PixelMutation[] finalMutations = new PixelMutation[mutationCount];
             Array.Copy(pooledMutations, finalMutations, mutationCount);
 
-            return new DeltaResponse(sessionId, finalMutations, width, height);
+            return new TerminalResponse(sessionId, width, height, Delta: new DeltaPayload(finalMutations));
         }
         finally
         {

@@ -1,8 +1,11 @@
-﻿using System.Net.Http.Json;
+﻿using Grpc.Core;
+using Grpc.Net.Client;
 using PixelTerminalUI.Contracts.Common;
 using PixelTerminalUI.Contracts.Dto;
 using PixelTerminalUI.Contracts.Optimizations;
+using PixelTerminalUI.Transport.Grpc;
 using Polly;
+using ProtoBuf.Grpc.Client;
 using Serilog;
 
 namespace TheLostGrid.Client;
@@ -13,12 +16,6 @@ public static class Program
         Environment.GetCommandLineArgs().Skip(1).FirstOrDefault() ??
         Environment.GetEnvironmentVariable("PIXEL_TERMINAL_SERVER_URL") ??
         throw new InvalidOperationException("Server URL is unspecified. Please provide the URL as the first command-line argument or set the 'PIXEL_TERMINAL_SERVER_URL' environment variable.");
-
-    private static readonly HttpClient HttpClient = new()
-    {
-        BaseAddress = new Uri(ServerUrl),
-        Timeout = new TimeSpan(hours: 0, minutes: 5, seconds: 0)
-    };
 
     public static async Task Main()
     {
@@ -44,18 +41,30 @@ public static class Program
         Guid? currentSessionId = null;
         string nextUserInput = string.Empty;
 
-        // Configure Polly retry strategy for transient network errors
-        ResiliencePipeline<HttpResponseMessage> pipeline = new ResiliencePipelineBuilder<HttpResponseMessage>()
+        // Execute runtime semantic configuration bindings before initializing infrastructure channels
+        GrpcModelConfiguration.RegisterTerminalContracts();
+
+        // Establish high velocity physical connection channel layout
+        using GrpcChannel channel = GrpcChannel.ForAddress(ServerUrl);
+
+        // Generate strong typed client dynamic proxy wrapper
+        ITerminalService client = channel.CreateGrpcService<ITerminalService>();
+
+        // Configure Polly retry strategy for transient RPC network errors
+        ResiliencePipeline<TerminalResponse> pipeline = new ResiliencePipelineBuilder<TerminalResponse>()
             .AddRetry(new()
             {
-                ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
-                    .Handle<HttpRequestException>(),
+                ShouldHandle = new PredicateBuilder<TerminalResponse>()
+                    .Handle<RpcException>(ex =>
+                        ex.StatusCode is StatusCode.Unavailable
+                            or StatusCode.DeadlineExceeded
+                            or StatusCode.Internal),
                 MaxRetryAttempts = 5,
                 Delay = TimeSpan.FromSeconds(2),
                 BackoffType = DelayBackoffType.Exponential,
                 OnRetry = static args =>
                 {
-                    Console.Write($"\r[Network Warning]: Connection lost. Retrying attempt {args.AttemptNumber + 1}/5...");
+                    Console.Write($"\r[Network Warning]: gRPC Connection lost. Retrying attempt {args.AttemptNumber + 1}/5...");
                     return default;
                 }
             })
@@ -66,57 +75,42 @@ public static class Program
         while (true)
         {
             TerminalRequest request = new(currentSessionId, nextUserInput);
-            HttpResponseMessage responseMessage;
+            TerminalResponse response;
 
             Log.Information("Sending request to server. SessionId: {SessionId}, Input: '{Input}'",
                 currentSessionId, nextUserInput);
 
             try
             {
-                // Execute the HTTP POST request inside the resilient pipeline
-                responseMessage = await pipeline.ExecuteAsync(
-                    async token => await HttpClient.PostAsJsonAsync("api/terminal/input", request, token));
+                // Execute the atomic binary transaction inside the resilient pipeline
+                response = await pipeline.ExecuteAsync(
+                    async token => await client.ProcessTransactionAsync(request));
             }
-            catch (Exception ex)
+            catch (RpcException rpcEx)
             {
                 // Thrown only if all 5 retry attempts failed completely
-                Log.Fatal(ex, "Permanent connection loss after maximum retry attempts. Destination: {Url}", ServerUrl);
+                Log.Fatal(rpcEx, "Permanent gRPC connection loss after maximum retry attempts. Status: {StatusCode}, Destination: {Url}", rpcEx.StatusCode, ServerUrl);
 
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"\n[Fatal Network Failure]: Connection lost permanently. {ex.Message}");
+                Console.WriteLine($"\n[Fatal Network Failure]: Connection lost permanently. RPC Status: {rpcEx.Status.Detail}");
                 break;
-            }
-
-            // Evaluate the final response after all retry attempts are exhausted
-            if (!responseMessage.IsSuccessStatusCode)
-            {
-                Log.Error("Server returned a non-success status code: {StatusCode}", responseMessage.StatusCode);
-
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"\n[Server Error]: {responseMessage.StatusCode}");
-                break;
-            }
-
-            TerminalResponse? response;
-            try
-            {
-                response = await responseMessage.Content.ReadFromJsonAsync<TerminalResponse>();
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Failed to deserialize JSON response from the server.");
+                Log.Fatal(ex, "Unexpected infrastructure failure during pipeline processing.");
 
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("\n[Client Error]: Received empty or corrupted payload from server.");
+                Console.WriteLine($"\n[Fatal Client Error]: {ex.Message}");
                 break;
             }
 
+            // High performance structural validation step
             if (response == null)
             {
-                Log.Error("Server payload deserialized to null.");
+                Log.Error("Server returned a null payload response frame structure.");
 
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("\n[Client Error]: Received empty or corrupted payload from server.");
+                Console.WriteLine("\n[Client Error]: Received empty or corrupted payload matrix from server.");
                 break;
             }
 
@@ -141,7 +135,7 @@ public static class Program
             {
                 switch (response)
                 {
-                    case FullFrameResponse fullFrame:
+                    case { FullFrame: not null } fullFrame:
                         {
                             Log.Information("Received FullFrameResponse. Redrawing entire TUI canvas ({Width}x{Height}).",
                                 bufferWidth, bufferHeight);
@@ -175,7 +169,7 @@ public static class Program
 
                                     int serverX = x - 1;
                                     int serverY = y - 1;
-                                    uint packedPixel = fullFrame.ScreenBuffer[serverY * bufferWidth + serverX];
+                                    uint packedPixel = fullFrame.FullFrame.ScreenBuffer[serverY * bufferWidth + serverX];
 
                                     PixelBitPacker.Unpack(
                                         packedPixel,
@@ -209,13 +203,13 @@ public static class Program
                             break;
                         }
 
-                    case DeltaResponse delta:
+                    case { Delta: not null } delta:
                         {
                             Log.Information("Received DeltaResponse containing {MutationCount} pixel mutations.",
-                                delta.Mutations.Length);
+                                delta.Delta.Mutations.Length);
 
                             // Mutate ONLY changed internal cells; borders remain completely untouched
-                            foreach (PixelMutation mutation in delta.Mutations)
+                            foreach (PixelMutation mutation in delta.Delta.Mutations)
                             {
                                 // Deconstruct 1D flat server array index into 2D grid coordinates
                                 int serverX = mutation.Index % bufferWidth;
