@@ -2,28 +2,19 @@
 using PixelTerminalUI.Contracts.Dto;
 using ProtoBuf.Meta;
 
-namespace PixelTerminalUI.Transport.Grpc;
+namespace PixelTerminalUI.Transport.Grpc.Configuration;
 
 /// <summary>
 /// Provides runtime semantic configuration layouts for protobuf-net binary serialization pipelines.
 /// </summary>
-/// <remarks>
-/// This class decouples core domain contract models from explicit transport technology attributes,
-/// dynamically constructing the Protocol Buffers metadata schemas at application initialization phase.
-/// </remarks>
 public static class GrpcModelConfiguration
 {
     /// <summary>
     /// Registers domain contracts into the global protobuf-net serialization model.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// Configures positional C# records by mapping fields manually to bypass tuple-like inference failures.
-    /// </para>
-    /// <para>
     /// <b>Warning</b>: Setting <c>UseConstructor = false</c> bypasses parameterless and positional constructors entirely during 
     /// deserialization, meaning any validation logic placed inside record constructors will be ignored by the runtime.
-    /// </para>
     /// </remarks>
     public static void RegisterTerminalContracts()
     {

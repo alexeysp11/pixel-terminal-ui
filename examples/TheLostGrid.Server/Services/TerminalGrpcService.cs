@@ -1,7 +1,7 @@
 ﻿using Grpc.Core;
 using PixelTerminalUI.Contracts.Dto;
 using PixelTerminalUI.Engine.RequestPipeline;
-using PixelTerminalUI.Transport.Grpc;
+using PixelTerminalUI.Transport.Grpc.Services;
 
 namespace TheLostGrid.Server.Services;
 

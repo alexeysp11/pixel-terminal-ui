@@ -4,7 +4,6 @@ using PixelTerminalUI.Engine.Commands.DismissError;
 using PixelTerminalUI.Engine.Extensions.ServiceCollectionExtensions;
 using PixelTerminalUI.Engine.SymbolHandling;
 using PixelTerminalUI.Engine.Validators;
-using PixelTerminalUI.Transport.Grpc;
 using ProtoBuf.Grpc.Server;
 using Serilog;
 using TheLostGrid.Server.Infrastructure.Interceptors;
@@ -17,6 +16,7 @@ using TheLostGrid.Server.Scenarios.SectorScanner;
 using TheLostGrid.Server.Scenarios.TerminalHack;
 using TheLostGrid.Server.Scenarios.Welcome;
 using TheLostGrid.Server.Services;
+using PixelTerminalUI.Transport.Grpc.Configuration;
 
 namespace TheLostGrid.Server;
 

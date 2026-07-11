@@ -33,6 +33,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PixelTerminalUI.Persistence
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PixelTerminalUI.Transport.Grpc", "src\PixelTerminalUI.Transport.Grpc\PixelTerminalUI.Transport.Grpc.csproj", "{ACD8BB37-7AFB-4BFF-A8B4-3659C7687BDF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PixelTerminalUI.Transport.Grpc.Tests", "tests\PixelTerminalUI.Transport.Grpc.Tests\PixelTerminalUI.Transport.Grpc.Tests.csproj", "{32EDD0FD-B0A1-46D6-84BD-D19B4647CAC5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -83,6 +85,10 @@ Global
 		{ACD8BB37-7AFB-4BFF-A8B4-3659C7687BDF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ACD8BB37-7AFB-4BFF-A8B4-3659C7687BDF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ACD8BB37-7AFB-4BFF-A8B4-3659C7687BDF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{32EDD0FD-B0A1-46D6-84BD-D19B4647CAC5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{32EDD0FD-B0A1-46D6-84BD-D19B4647CAC5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{32EDD0FD-B0A1-46D6-84BD-D19B4647CAC5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{32EDD0FD-B0A1-46D6-84BD-D19B4647CAC5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -99,6 +105,7 @@ Global
 		{768B063D-18F2-4496-B25C-F0F974BA7DC5} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{FD394743-3FF0-4428-B945-C28045705ED7} = {D67A26AB-B1A0-4FE6-A01C-A291AF039408}
 		{ACD8BB37-7AFB-4BFF-A8B4-3659C7687BDF} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{32EDD0FD-B0A1-46D6-84BD-D19B4647CAC5} = {D67A26AB-B1A0-4FE6-A01C-A291AF039408}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {08E094FB-BF12-40FA-A1F1-21F9A09B0553}
