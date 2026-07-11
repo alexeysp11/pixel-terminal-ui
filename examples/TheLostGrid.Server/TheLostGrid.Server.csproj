@@ -1,23 +1,21 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>487239c2-be68-41f5-ba97-fef1e6541451</UserSecretsId>
+    <UserSecretsId>69cebb0f-5043-43ee-95bf-b46db813c0d3</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>..\..</DockerfileContext>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Grpc.Core.Api" Version="2.80.0" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.27" />
+    <PackageReference Include="Grpc.AspNetCore" Version="2.57.0" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
     <PackageReference Include="protobuf-net.Grpc.AspNetCore" Version="1.2.2" />
     <PackageReference Include="Serilog" Version="4.3.1" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="Serilog.AspNetCore" Version="7.0.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
   <ItemGroup>
