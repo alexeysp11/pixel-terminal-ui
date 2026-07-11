@@ -49,7 +49,7 @@ public sealed class RequestPipelineHandlerTests
         _rendererMock
             .Setup(r => r.Draw(It.IsAny<TerminalScreen>(), It.IsAny<Pixel[]>()));
 
-        // Configure the responsive builder to return a valid response object by default.
+        // Configure the responsive builder to return a valid response object containing a full frame payload by default
         _adaptiveResponseBuilderMock
             .Setup(b => b.Build(
                 It.IsAny<Guid>(),
@@ -58,7 +58,12 @@ public sealed class RequestPipelineHandlerTests
                 It.IsAny<int>(),
                 It.IsAny<int>()))
             .Returns((Guid sid, uint[] cur, uint[]? hist, int w, int h) =>
-                new FullFrameResponse(sid, cur, w, h));
+                new TerminalResponse(
+                    SessionId: sid,
+                    Width: w,
+                    Height: h,
+                    FullFrame: new FullFramePayload(cur),
+                    Delta: null));
 
         // Setup the frame buffer repository to return null historical buffer by default
 #nullable disable
@@ -104,7 +109,7 @@ public sealed class RequestPipelineHandlerTests
         // Arrange
         Guid sessionId = Guid.NewGuid();
         Guid focusedWidgetId = Guid.NewGuid();
-        string userInput = "WMS-SCAN-456";
+        string userInput = "TEST-SCAN-456";
 
         Mock<CommandBase> commandMock = new();
         commandMock
@@ -157,8 +162,15 @@ public sealed class RequestPipelineHandlerTests
 
         response
             .Should()
-            .NotBeNull("because the pipeline handler must return a generated terminal response framework structure")
-            .And.BeOfType<FullFrameResponse>("because the default mocked behavior yields a full frame representation layout");
+            .NotBeNull("because the pipeline handler must return a generated terminal response framework structure");
+
+        response.FullFrame
+            .Should()
+            .NotBeNull("because the default mocked behavior yields a full frame representation layout");
+
+        response.Delta
+            .Should()
+            .BeNull("because a freshly initialized or default full frame redraw sequence must suppress delta transformations");
 
         response.SessionId
             .Should()

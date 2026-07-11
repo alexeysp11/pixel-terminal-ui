@@ -10,7 +10,7 @@ public sealed class AdaptiveResponseBuilderTests
     private readonly AdaptiveResponseBuilder _sut = new();
 
     [Fact]
-    public void Build_WhenHistoricalBufferIsNull_ShouldReturnFullFrameResponse()
+    public void Build_WhenHistoricalBufferIsNull_ShouldReturnFullFramePayload()
     {
         // Arrange
         Guid sessionId = Guid.NewGuid();
@@ -25,17 +25,23 @@ public sealed class AdaptiveResponseBuilderTests
         // Assert
         response
             .Should()
-            .NotBeNull("because a missing historical buffer indicates a cold start session render state")
-            .And.BeOfType<FullFrameResponse>("because the framework must broadcast the entire screen topology when no historical baseline exists");
+            .NotBeNull("because a missing historical buffer indicates a cold start session render state");
 
-        FullFrameResponse fullFrame = (FullFrameResponse)response;
-        fullFrame.ScreenBuffer
+        response.FullFrame
+            .Should()
+            .NotBeNull("because the framework must broadcast the entire screen topology when no historical baseline exists");
+
+        response.Delta
+            .Should()
+            .BeNull("because a full viewport initialization packet must exclude differential delta mutation blocks");
+
+        response.FullFrame!.ScreenBuffer
             .Should()
             .BeSameAs(currentBuffer, "because the full frame response container must directly enclose the latest reference frame buffer array");
     }
 
     [Fact]
-    public void Build_WhenHistoricalBufferLengthIsInvalid_ShouldReturnFullFrameResponse()
+    public void Build_WhenHistoricalBufferLengthIsInvalid_ShouldReturnFullFramePayload()
     {
         // Arrange
         Guid sessionId = Guid.NewGuid();
@@ -50,12 +56,19 @@ public sealed class AdaptiveResponseBuilderTests
         // Assert
         response
             .Should()
-            .NotBeNull("because mismatching screen data boundaries force an immediate engine recovery action")
-            .And.BeOfType<FullFrameResponse>("because terminal geometry changes require a full viewport redraw sequence on the client");
+            .NotBeNull("because mismatching screen data boundaries force an immediate engine recovery action");
+
+        response.FullFrame
+            .Should()
+            .NotBeNull("because terminal geometry changes require a full viewport redraw sequence on the client");
+
+        response.Delta
+            .Should()
+            .BeNull("because geometry recovery routines override incremental delta tracking optimizations");
     }
 
     [Fact]
-    public void Build_WhenNoChangesDetected_ShouldReturnDeltaResponseWithEmptyMutations()
+    public void Build_WhenNoChangesDetected_ShouldReturnDeltaPayloadWithEmptyMutations()
     {
         // Arrange
         Guid sessionId = Guid.NewGuid();
@@ -70,17 +83,22 @@ public sealed class AdaptiveResponseBuilderTests
         // Assert
         response
             .Should()
-            .NotBeNull("because stable screen frames must yield a valid data frame package")
-            .And.BeOfType<DeltaResponse>("because identical pixel states represent a zero percentage change matrix layout");
+            .NotBeNull("because stable screen frames must yield a valid data frame package");
 
-        DeltaResponse deltaFrame = (DeltaResponse)response;
-        deltaFrame.Mutations
+        response.Delta
+            .Should()
+            .NotBeNull("because identical pixel states represent a zero percentage change matrix layout");
+
+        response.FullFrame
+            .Should()
+            .BeNull("because delta updates must omit the redundant heavy full screen layout data segments");
+
+        response.Delta!.Mutations
             .Should()
             .BeEmpty("because no pixel indexes diverged from the historical background cache data snapshot");
     }
-
     [Fact]
-    public void Build_WhenChangesAreBelowThreshold_ShouldReturnDeltaResponseWithPreciseMutations()
+    public void Build_WhenChangesAreBelowThreshold_ShouldReturnDeltaPayloadWithPreciseMutations()
     {
         // Arrange
         Guid sessionId = Guid.NewGuid();
@@ -95,11 +113,17 @@ public sealed class AdaptiveResponseBuilderTests
         // Assert
         response
             .Should()
-            .NotBeNull("because localized sub-threshold screen shifts must generate data updates")
-            .And.BeOfType<DeltaResponse>("because a low density modification ratio optimizes perfectly into a coordinate delta structure");
+            .NotBeNull("because localized sub-threshold screen shifts must generate data updates");
 
-        DeltaResponse deltaFrame = (DeltaResponse)response;
-        deltaFrame.Mutations
+        response.Delta
+            .Should()
+            .NotBeNull("because a low density modification ratio optimizes perfectly into a coordinate delta structure");
+
+        response.FullFrame
+            .Should()
+            .BeNull("because low density changes must omit the redundant heavy full screen layout data segments");
+
+        response.Delta!.Mutations
             .Should()
             .ContainSingle("because only one isolated cell position was mutated relative to the historical tracking layer")
             .Which.Should()
@@ -107,7 +131,7 @@ public sealed class AdaptiveResponseBuilderTests
     }
 
     [Fact]
-    public void Build_WhenChangesAreExactlyAtThreshold_ShouldStillReturnDeltaResponse()
+    public void Build_WhenChangesAreExactlyAtThreshold_ShouldStillReturnDeltaPayload()
     {
         // Arrange
         Guid sessionId = Guid.NewGuid();
@@ -122,11 +146,17 @@ public sealed class AdaptiveResponseBuilderTests
         // Assert
         response
             .Should()
-            .NotBeNull("the matrix evaluation system must deliver structural network packages at boundary conditions")
-            .And.BeOfType<DeltaResponse>("because the algorithm boundary relies on strict inequality comparison rules");
+            .NotBeNull("the matrix evaluation system must deliver structural network packages at boundary conditions");
 
-        DeltaResponse deltaFrame = (DeltaResponse)response;
-        deltaFrame.Mutations
+        response.Delta
+            .Should()
+            .NotBeNull("because the algorithm boundary relies on strict inequality comparison rules");
+
+        response.FullFrame
+            .Should()
+            .BeNull("because exact boundary conditions matching delta constraints must suppress full frame fallback routines");
+
+        response.Delta!.Mutations
             .Should()
             .ContainSingle("because the strict mathematical ratio boundary preserves structural compaction routines")
             .Which.Should()
@@ -134,7 +164,7 @@ public sealed class AdaptiveResponseBuilderTests
     }
 
     [Fact]
-    public void Build_WhenChangesAreAboveThreshold_ShouldFallbackToFullFrameResponse()
+    public void Build_WhenChangesAreAboveThreshold_ShouldFallbackToFullFramePayload()
     {
         // Arrange
         Guid sessionId = Guid.NewGuid();
@@ -149,17 +179,23 @@ public sealed class AdaptiveResponseBuilderTests
         // Assert
         response
             .Should()
-            .NotBeNull("because heavy graphic viewport layout transitions must complete execution correctly")
-            .And.BeOfType<FullFrameResponse>("because sending dense collections of individual object coordinates creates more serialization overhead than flat primitive arrays");
+            .NotBeNull("because heavy graphic viewport layout transitions must complete execution correctly");
 
-        FullFrameResponse fullFrame = (FullFrameResponse)response;
-        fullFrame.ScreenBuffer
+        response.FullFrame
+            .Should()
+            .NotBeNull("because sending dense collections of individual object coordinates creates more serialization overhead than flat primitive arrays");
+
+        response.Delta
+            .Should()
+            .BeNull("because dense high saturation modifications must completely deactivate incremental delta payloads");
+
+        response.FullFrame!.ScreenBuffer
             .Should()
             .BeSameAs(currentBuffer, "because high density mutations command an immediate swap back to total screen state replication vectors");
     }
 
     [Fact]
-    public void Build_WhenMatrixDimensionsAreZero_ShouldReturnDeltaResponseWithEmptyMutations()
+    public void Build_WhenMatrixDimensionsAreZero_ShouldReturnDeltaPayloadWithEmptyMutations()
     {
         // Arrange
         Guid sessionId = Guid.NewGuid();
@@ -174,11 +210,18 @@ public sealed class AdaptiveResponseBuilderTests
         // Assert
         response
             .Should()
-            .NotBeNull("because empty geometry scenarios must safely yield a valid output container")
-            .And.BeOfType<DeltaResponse>("because zero changes with zero cells evaluate mathematically into a zero mutation delta framework");
+            .NotBeNull("because empty geometry scenarios must safely yield a valid output container");
 
-        DeltaResponse deltaFrame = (DeltaResponse)response;
-        deltaFrame.Mutations
+        response.Delta
+            .Should()
+            .NotBeNull("because zero changes with zero cells evaluate mathematically into a zero mutation delta framework");
+
+        // Fix typo in original assert explanation ("DeltaResponse" -> "Delta payload properties")
+        response.FullFrame
+            .Should()
+            .BeNull("because a zero dimension viewport cannot allocate or initialize a valid full frame screen buffer layout");
+
+        response.Delta!.Mutations
             .Should()
             .BeEmpty("because no cell iterations could possibly execute or diverge within a zero dimension space");
     }
@@ -199,18 +242,23 @@ public sealed class AdaptiveResponseBuilderTests
         // Assert
         response
             .Should()
-            .NotBeNull("because the system must tolerate trailing raw buffer allocation anomalies outside the target area")
-            .And.BeOfType<DeltaResponse>("because the internal loop boundary stops strictly at the stated total cells count threshold");
+            .NotBeNull("because the system must tolerate trailing raw buffer allocation anomalies outside the target area");
 
-        DeltaResponse deltaFrame = (DeltaResponse)response;
-        deltaFrame.Mutations
+        response.Delta
+            .Should()
+            .NotBeNull("because the internal loop boundary stops strictly at the stated total cells count threshold");
+
+        response.FullFrame
+            .Should()
+            .BeNull("because buffer anomalies outside logical geometry limits must not trigger an explicit full frame recovery sequence");
+
+        response.Delta!.Mutations
             .Should()
             .BeEmpty("because the cells within the evaluated coordinates 0 and 1 match the historical baseline perfectly");
     }
 
-
     [Fact]
-    public void Build_WhenSingleCellMatrixIsMutated_ShouldFallbackToFullFrameResponse()
+    public void Build_WhenSingleCellMatrixIsMutated_ShouldFallbackToFullFramePayload()
     {
         // Arrange
         Guid sessionId = Guid.NewGuid();
@@ -225,8 +273,14 @@ public sealed class AdaptiveResponseBuilderTests
         // Assert
         response
             .Should()
-            .NotBeNull("because single element state mutations must resolve into a concrete transfer model package")
-            .And.BeOfType<FullFrameResponse>("because changing the only existing cell yields a maximum saturation change factor which triggers full array distribution");
-    }
+            .NotBeNull("because single element state mutations must resolve into a concrete transfer model package");
 
+        response.FullFrame
+            .Should()
+            .NotBeNull("because changing the only existing cell yields a maximum saturation change factor which triggers full array distribution");
+
+        response.Delta
+            .Should()
+            .BeNull("because absolute 100% viewport mutations completely eliminate the serialization efficiency of individual delta points");
+    }
 }
