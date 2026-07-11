@@ -590,7 +590,7 @@ public sealed class RequestPipelineHandlerTests
         {
             Id = Guid.NewGuid(),
             SessionId = sessionId,
-            Name = "InventoryTransferScreen",
+            Name = "TestTransferScreen",
             Width = 10,
             Height = 3,
             Visible = true,

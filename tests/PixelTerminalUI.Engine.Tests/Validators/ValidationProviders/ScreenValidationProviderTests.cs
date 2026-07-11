@@ -13,7 +13,7 @@ public sealed class ScreenValidationProviderTests
     {
         // Arrange
         IServiceCollection services = new ServiceCollection();
-        string targetScreen = "InventoryScreen";
+        string targetScreen = "TestScreen";
 
         ValidationDelegate lengthValidator = (screen, input) => input.Length > 10
             ? ValidationResult.Fail("Too long")

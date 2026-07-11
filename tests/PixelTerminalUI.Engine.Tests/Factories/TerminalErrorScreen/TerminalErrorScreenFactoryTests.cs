@@ -21,7 +21,7 @@ public sealed class TerminalErrorScreenFactoryTests
         {
             Id = Guid.NewGuid(),
             SessionId = sessionId,
-            Name = "ActiveInventoryScreenLayout",
+            Name = "ActiveTestScreenLayout",
             Width = 80,
             Height = 25,
             Widgets = []
