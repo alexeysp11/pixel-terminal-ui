@@ -98,7 +98,7 @@ public sealed class TerminalHackSubmitKeyCommand : Command<OneStepCommandState>
             };
 
             context.ErrorMessage = selectedIndex == -1
-                ? "INVALID SELECTION CODE! ENTER 1, 2, OR 3"
+                ? "INVALID SELECTION CODE!"
                 : $"ACCESS DENIED! ATTEMPTS LEFT: {nextAttempts}";
 
             await context.SessionRepository.SaveActiveScreenAsync(context.SessionId, multiAttemptScreen);

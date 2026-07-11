@@ -212,11 +212,14 @@ public static class Program
 
                     case { Delta: not null } delta:
                         {
+                            // Safely fallback to an empty array if protobuf-net deserialized a missing collection as null
+                            PixelMutation[] mutations = delta.Delta.Mutations ?? [];
+
                             Log.Information("Received DeltaResponse containing {MutationCount} pixel mutations.",
-                                delta.Delta.Mutations.Length);
+                                mutations.Length);
 
                             // Mutate ONLY changed internal cells; borders remain completely untouched
-                            foreach (PixelMutation mutation in delta.Delta.Mutations)
+                            foreach (PixelMutation mutation in mutations)
                             {
                                 // Deconstruct 1D flat server array index into 2D grid coordinates
                                 int serverX = mutation.Index % bufferWidth;
