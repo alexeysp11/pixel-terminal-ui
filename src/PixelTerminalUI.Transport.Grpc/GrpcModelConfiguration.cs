@@ -14,11 +14,16 @@ namespace PixelTerminalUI.Transport.Grpc;
 public static class GrpcModelConfiguration
 {
     /// <summary>
-    /// Registers domain types, records, and data structures into the global protobuf-net model configuration matrix.
+    /// Registers domain contracts into the global protobuf-net serialization model.
     /// </summary>
     /// <remarks>
-    /// To bypass automatic structural inference failures associated with positional C# records (Tuple-like types),
-    /// all targeting models are declared by explicitly disabling default behaviors and mapping field numbers manually.
+    /// <para>
+    /// Configures positional C# records by mapping fields manually to bypass tuple-like inference failures.
+    /// </para>
+    /// <para>
+    /// <b>Warning</b>: Setting <c>UseConstructor = false</c> bypasses parameterless and positional constructors entirely during 
+    /// deserialization, meaning any validation logic placed inside record constructors will be ignored by the runtime.
+    /// </para>
     /// </remarks>
     public static void RegisterTerminalContracts()
     {
