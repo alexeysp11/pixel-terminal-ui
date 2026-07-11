@@ -121,8 +121,7 @@ docker compose up -d --build
 docker exec -it pixel_terminal_app env PIXEL_TERMINAL_SERVER_URL=http://localhost:8080 TERM=xterm-256color dotnet /app/client/TheLostGrid.Client.dll
 ```
 
-After successfully deploying the containers, the following local endpoints will be available:
-* 📟 **Swagger Server API:** `http://localhost:5221/swagger` — for manually sending commands and testing the generation of BDUI screens.
+After successfully deploying the containers, the following local endpoint will be available:
 * 🖥️ **Redis Commander Panel:** `http://localhost:8082` — for visually analyzing the structure of fields within **Redis Hash** sessions in real time.
 
 ---
