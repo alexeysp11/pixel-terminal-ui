@@ -255,7 +255,7 @@ public sealed class RequestPipelineHandlerTests
             Widgets = [activeWidget]
         };
 
-        // Создаем заглушку экрана ошибки, которую вернет фабрика
+        // Create a stub error screen that the factory will return.
         SimpleMessageScreen mockErrorScreen = new()
         {
             Id = Guid.NewGuid(),
@@ -280,7 +280,7 @@ public sealed class RequestPipelineHandlerTests
             .Setup(p => p.GetValidatorsForScreen("UsersScreen"))
             .Returns([failingValidator]);
 
-        // Настраиваем мок фабрики ошибок, чтобы избежать NullReferenceException
+        // Setting up a mock error factory to avoid NullReferenceException
         _errorScreenFactoryMock
             .Setup(f => f.BuildErrorScreen(sessionId, screen, It.IsAny<string>()))
             .Returns(mockErrorScreen);
@@ -339,7 +339,7 @@ public sealed class RequestPipelineHandlerTests
             Widgets = [activeWidget]
         };
 
-        // Создаем заглушку экрана ошибки, которую вернет фабрика
+        // Create a stub error screen that the factory will return.
         SimpleMessageScreen mockErrorScreen = new()
         {
             Id = Guid.NewGuid(),
@@ -357,7 +357,7 @@ public sealed class RequestPipelineHandlerTests
             .Setup(r => r.GetActiveScreenAsync(sessionId, default))
             .ReturnsAsync(screen);
 
-        // Настраиваем мок фабрики ошибок, чтобы избежать NullReferenceException
+        // Setting up a mock error factory to avoid NullReferenceException
         _errorScreenFactoryMock
             .Setup(f => f.BuildErrorScreen(sessionId, screen, It.IsAny<string>()))
             .Returns(mockErrorScreen);

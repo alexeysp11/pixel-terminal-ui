@@ -19,7 +19,6 @@ public sealed class StartupScreenFactory : IStartupScreenFactory
         _screenType = screenType;
         _screenActivator = screenActivator;
 
-        // Вот этот гвард-блок вернет стабильность
         if (!typeof(TerminalScreen).IsAssignableFrom(screenType))
         {
             throw new ArgumentException($"The specified type {screenType.Name} must derive from TerminalScreen", nameof(screenType));
