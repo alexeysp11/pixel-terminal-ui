@@ -1,8 +1,8 @@
 ﻿using FluentAssertions;
 using Moq;
-using PixelTerminalUI.StatelessEngine.Commands.CommandContexts;
-using PixelTerminalUI.StatelessEngine.Repositories;
-using PixelTerminalUI.StatelessEngine.Screens;
+using PixelTerminalUI.Engine.Commands.CommandContexts;
+using PixelTerminalUI.Engine.Repositories;
+using PixelTerminalUI.Engine.Screens;
 using TheLostGrid.Server.Domain.Enums;
 using TheLostGrid.Server.Scenarios.CharacterCreation;
 using TheLostGrid.Server.Scenarios.SectorNavigation;

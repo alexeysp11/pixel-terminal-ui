@@ -1,6 +1,6 @@
 ﻿using TheLostGrid.Server.Scenarios.SectorNavigation;
-using PixelTerminalUI.StatelessEngine.Commands.CommandContexts;
-using PixelTerminalUI.StatelessEngine.Commands.Core;
+using PixelTerminalUI.Engine.Commands.CommandContexts;
+using PixelTerminalUI.Engine.Commands.Core;
 using TheLostGrid.Server.Domain.Enums;
 
 namespace TheLostGrid.Server.Scenarios.CharacterCreation;

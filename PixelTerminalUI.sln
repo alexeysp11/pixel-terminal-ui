@@ -5,7 +5,7 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PixelTerminalUI.StatelessEngine", "src\PixelTerminalUI.StatelessEngine\PixelTerminalUI.StatelessEngine.csproj", "{A61D037C-79AA-4B8B-93F9-DA1E271B5B6D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PixelTerminalUI.Engine", "src\PixelTerminalUI.Engine\PixelTerminalUI.Engine.csproj", "{A61D037C-79AA-4B8B-93F9-DA1E271B5B6D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{3FBC1DBA-8F43-4EE6-873C-BA16E88AD9A0}"
 EndProject
@@ -17,7 +17,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TheLostGrid.Server", "examp
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{D67A26AB-B1A0-4FE6-A01C-A291AF039408}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PixelTerminalUI.StatelessEngine.Tests", "tests\PixelTerminalUI.StatelessEngine.Tests\PixelTerminalUI.StatelessEngine.Tests.csproj", "{DF42D313-3AD9-4195-B472-AE2E1D9FB38E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PixelTerminalUI.Engine.Tests", "tests\PixelTerminalUI.Engine.Tests\PixelTerminalUI.Engine.Tests.csproj", "{DF42D313-3AD9-4195-B472-AE2E1D9FB38E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TheLostGrid.Client", "examples\TheLostGrid.Client\TheLostGrid.Client.csproj", "{FA774855-F346-4F54-9DEB-5B88D17A51FB}"
 EndProject

@@ -1,4 +1,4 @@
-﻿using PixelTerminalUI.StatelessEngine.SymbolHandling;
+﻿using PixelTerminalUI.Engine.SymbolHandling;
 
 namespace TheLostGrid.Server.Tests.Infrastructure.Interceptors.Fakes;
 

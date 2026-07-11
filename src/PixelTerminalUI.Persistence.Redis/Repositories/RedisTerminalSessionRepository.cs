@@ -1,8 +1,8 @@
 ﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
-using PixelTerminalUI.StatelessEngine.Screens;
-using PixelTerminalUI.StatelessEngine.Repositories;
+using PixelTerminalUI.Engine.Screens;
+using PixelTerminalUI.Engine.Repositories;
 using PixelTerminalUI.Persistence.Redis.Configuration;
 
 namespace PixelTerminalUI.Persistence.Redis.Repositories;

@@ -1,6 +1,6 @@
-﻿using PixelTerminalUI.StatelessEngine.Commands.CommandContexts;
-using PixelTerminalUI.StatelessEngine.Commands.Core;
-using PixelTerminalUI.StatelessEngine.Screens;
+﻿using PixelTerminalUI.Engine.Commands.CommandContexts;
+using PixelTerminalUI.Engine.Commands.Core;
+using PixelTerminalUI.Engine.Screens;
 using TheLostGrid.Server.Domain.Enums;
 using TheLostGrid.Server.Scenarios.SectorNavigation;
 using TheLostGrid.Server.Scenarios.SectorScanner;

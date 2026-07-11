@@ -1,6 +1,6 @@
-﻿using PixelTerminalUI.StatelessEngine.Repositories;
-using PixelTerminalUI.StatelessEngine.Screens;
-using PixelTerminalUI.StatelessEngine.SymbolHandling;
+﻿using PixelTerminalUI.Engine.Repositories;
+using PixelTerminalUI.Engine.Screens;
+using PixelTerminalUI.Engine.SymbolHandling;
 using TheLostGrid.Server.Scenarios.Help;
 
 namespace TheLostGrid.Server.Infrastructure.Interceptors;

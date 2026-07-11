@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Moq;
 using PixelTerminalUI.Contracts.Dto;
-using PixelTerminalUI.StatelessEngine.RequestPipeline;
+using PixelTerminalUI.Engine.RequestPipeline;
 using TheLostGrid.Server.Endpoints;
 using FluentAssertions;
 

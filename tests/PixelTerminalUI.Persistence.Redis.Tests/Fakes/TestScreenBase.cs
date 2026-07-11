@@ -1,4 +1,4 @@
-﻿using PixelTerminalUI.StatelessEngine.Screens;
+﻿using PixelTerminalUI.Engine.Screens;
 
 namespace PixelTerminalUI.Persistence.Redis.Tests.Fakes;
 

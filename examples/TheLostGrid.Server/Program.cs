@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using PixelTerminalUI.Persistence.Redis.Extensions.ServiceCollectionExtensions;
-using PixelTerminalUI.StatelessEngine.Commands.DismissError;
-using PixelTerminalUI.StatelessEngine.Extensions.ServiceCollectionExtensions;
-using PixelTerminalUI.StatelessEngine.SymbolHandling;
-using PixelTerminalUI.StatelessEngine.Validators;
+using PixelTerminalUI.Engine.Commands.DismissError;
+using PixelTerminalUI.Engine.Extensions.ServiceCollectionExtensions;
+using PixelTerminalUI.Engine.SymbolHandling;
+using PixelTerminalUI.Engine.Validators;
 using PixelTerminalUI.Transport.Grpc;
 using ProtoBuf.Grpc.Server;
 using Serilog;

@@ -3,7 +3,7 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Order;
 using Microsoft.Extensions.Logging.Abstractions;
 using StackExchange.Redis;
-using PixelTerminalUI.StatelessEngine.Screens;
+using PixelTerminalUI.Engine.Screens;
 using PixelTerminalUI.Persistence.Redis.Repositories;
 using PixelTerminalUI.Persistence.Redis.Configuration;
 

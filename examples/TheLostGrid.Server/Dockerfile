@@ -19,7 +19,7 @@ COPY ["examples/TheLostGrid.Server/TheLostGrid.Server.csproj", "examples/TheLost
 COPY ["examples/TheLostGrid.Client/TheLostGrid.Client.csproj", "examples/TheLostGrid.Client/"]
 COPY ["src/PixelTerminalUI.Contracts/PixelTerminalUI.Contracts.csproj", "src/PixelTerminalUI.Contracts/"]
 COPY ["src/PixelTerminalUI.Persistence.Redis/PixelTerminalUI.Persistence.Redis.csproj", "src/PixelTerminalUI.Persistence.Redis/"]
-COPY ["src/PixelTerminalUI.StatelessEngine/PixelTerminalUI.StatelessEngine.csproj", "src/PixelTerminalUI.StatelessEngine/"]
+COPY ["src/PixelTerminalUI.Engine/PixelTerminalUI.Engine.csproj", "src/PixelTerminalUI.Engine/"]
 COPY ["src/PixelTerminalUI.Transport.Grpc/PixelTerminalUI.Transport.Grpc.csproj", "src/PixelTerminalUI.Transport.Grpc/"]
 
 # Restore dependencies for both end applications

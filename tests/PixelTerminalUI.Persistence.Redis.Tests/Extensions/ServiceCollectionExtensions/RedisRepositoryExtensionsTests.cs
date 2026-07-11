@@ -8,7 +8,7 @@ using PixelTerminalUI.Persistence.Redis.Extensions.ServiceCollectionExtensions;
 using PixelTerminalUI.Persistence.Redis.Repositories;
 using PixelTerminalUI.Persistence.Redis.Tests.Fakes;
 using PixelTerminalUI.Persistence.Redis.Tests.Fixtures;
-using PixelTerminalUI.StatelessEngine.Screens;
+using PixelTerminalUI.Engine.Screens;
 using StackExchange.Redis;
 
 namespace PixelTerminalUI.Persistence.Redis.Tests.Extensions.ServiceCollectionExtensions;
@@ -58,7 +58,7 @@ public sealed class RedisRepositoryExtensionsTests(RedisTestFixture fixture)
             .Should()
             .NotBeNull("because global serialization options are required to process nested system models");
 
-        provider.GetService<StatelessEngine.Repositories.ITerminalSessionRepository>()
+        provider.GetService<Engine.Repositories.ITerminalSessionRepository>()
             .Should()
             .NotBeNull("because the core abstract repository binding mapping must be successfully resolved");
     }

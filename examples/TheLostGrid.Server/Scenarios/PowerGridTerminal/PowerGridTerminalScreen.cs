@@ -1,5 +1,5 @@
-﻿using PixelTerminalUI.StatelessEngine.Screens;
-using PixelTerminalUI.StatelessEngine.Widgets;
+﻿using PixelTerminalUI.Engine.Screens;
+using PixelTerminalUI.Engine.Widgets;
 using TheLostGrid.Server.Domain.Enums;
 
 namespace TheLostGrid.Server.Scenarios.PowerGridTerminal;
