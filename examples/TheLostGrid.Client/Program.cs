@@ -10,6 +10,9 @@ using Serilog;
 
 namespace TheLostGrid.Client;
 
+/// <summary>
+/// Provides the main entry point to execute the resilient high performance terminal thin client application.
+/// </summary>
 public static class Program
 {
     private static readonly string ServerUrl =
@@ -17,6 +20,9 @@ public static class Program
         Environment.GetEnvironmentVariable("PIXEL_TERMINAL_SERVER_URL") ??
         throw new InvalidOperationException("Server URL is unspecified. Please provide the URL as the first command-line argument or set the 'PIXEL_TERMINAL_SERVER_URL' environment variable.");
 
+    /// <summary>
+    /// Bootstraps the client connection channel and drives the main user interaction execution loop.
+    /// </summary>
     public static async Task Main()
     {
         // Store logs cleanly in the system's temporary directory to avoid cluttering source folders
