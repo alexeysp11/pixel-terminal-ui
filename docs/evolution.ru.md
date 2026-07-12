@@ -416,6 +416,8 @@ public abstract class Command<TEnum> : CommandBase where TEnum : struct, Enum
 }
 ```
 
+AggressiveInlining используется для уменьшения аллокаций при конвертации из enum в int, и обратно.
+
 Концепция реализации команд в `PixelTerminalUI` напрямую вдохновлена механизмами компилятора C# для генерации асинхронных методов (`IAsyncStateMachine`). При компиляции каждый `async`-метод преобразуется в стейт-машину:
 *   Локальные переменные исходного метода становятся полями сгенерированной структуры/класса.
 *   Добавляется целочисленное поле `_state` для отслеживания текущего шага выполнения.
@@ -1015,45 +1017,10 @@ private void ConfigurePolymorphism(JsonTypeInfo typeInfo)
 
 #### Как замерить сетевой оверхед (Размер пакета в байтах)
 
-```csharp
-using System;
-using System.IO;
-using System.Text.Json;
-using PixelTerminalUI.Contracts.Dto;
-using PixelTerminalUI.Transport.Grpc;
-using ProtoBuf.Meta;
-
-// Initialize your custom layout schema mapping rules
-GrpcModelConfiguration.RegisterTerminalContracts();
-
-// Create sample payload mimicking a practical screen mutation (e.g. 5 modified pixels)
-TerminalResponse sampleResponse = new(
-    SessionId: Guid.NewGuid(),
-    Width: 80,
-    Height: 24,
-    FullFrame: null,
-    Delta: new DeltaPayload([
-        new(10, 4294967295),
-        new(11, 2147483648),
-        new(12, 1024),
-        new(13, 2048),
-        new(14, 4096)
-    ])
-);
-
-// 1. Measure System.Text.Json size
-byte[] jsonBytes = JsonSerializer.SerializeToUtf8Bytes(sampleResponse);
-int jsonSize = jsonBytes.Length;
-
-// 2. Measure protobuf-net size
-using MemoryStream ms = new();
-RuntimeTypeModel.Default.Serialize(ms, sampleResponse);
-int protoSize = (int)ms.Length;
-
-Console.WriteLine($"[JSON Payload Size]: {jsonSize} bytes");
-Console.WriteLine($"[Protobuf Payload Size]: {protoSize} bytes");
-Console.WriteLine($"[Bandwidth Savings]: {((1 - (double)protoSize / jsonSize) * 100):F1}% reduction");
-```
+| Method                                | Mean     | Error   | StdDev  | Ratio | Rank | Gen0   | Allocated | Alloc Ratio |
+|-------------------------------------- |---------:|--------:|--------:|------:|-----:|-------:|----------:|------------:|
+| ExecuteCodeFirstProtobufSerialization | 519.7 ns | 1.09 ns | 0.91 ns |  0.58 |    1 |      - |         - |        0.00 |
+| ExecuteSystemTextJsonSerialization    | 902.3 ns | 1.31 ns | 1.09 ns |  1.00 |    2 | 0.3557 |     744 B |        1.00 |
 
 ### Ограничения, компромиссы и цена решений (Trade-offs)
 
