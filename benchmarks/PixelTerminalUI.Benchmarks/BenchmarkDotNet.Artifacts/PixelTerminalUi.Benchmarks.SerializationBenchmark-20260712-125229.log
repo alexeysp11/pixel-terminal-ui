@@ -1,0 +1,7 @@
+// Validating benchmarks:
+// Benchmark SerializationBenchmark.ExecuteSystemTextJsonSerialization: DefaultJob
+//    * Benchmarked method `ExecuteSystemTextJsonSerialization` is within a sealed class, Declaring type must be unsealed.
+
+// Benchmark SerializationBenchmark.ExecuteCodeFirstProtobufSerialization: DefaultJob
+//    * Benchmarked method `ExecuteCodeFirstProtobufSerialization` is within a sealed class, Declaring type must be unsealed.
+

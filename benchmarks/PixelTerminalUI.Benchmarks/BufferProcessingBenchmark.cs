@@ -4,6 +4,10 @@ using PixelTerminalUI.Contracts.Optimizations;
 
 namespace PixelTerminalUi.Benchmarks;
 
+/// <summary>
+/// Evaluates the processing speed and memory allocation overhead of cell matrix transformation pipelines,
+/// comparing high-volume record struct instances against atomic bit-packed primitive fields.
+/// </summary>
 [MemoryDiagnoser]
 public class BufferProcessingBenchmark
 {
@@ -11,6 +15,10 @@ public class BufferProcessingBenchmark
     private const int Height = 12;
     private readonly char[] _sampleSymbols = ['S', 'E', 'S', 'S', 'I', 'O', 'N', ' ', 'A', 'C', 'T', 'I', 'V', 'E'];
 
+    /// <summary>
+    /// Evaluates execution velocity and heap traffic footprints using standard object record struct instances initialization loops.
+    /// </summary>
+    /// <returns>A flat array enclosure containing uncompressed runtime structural cell state representations.</returns>
     [Benchmark(Baseline = true)]
     public Pixel[] ProcessLegacyBuffer()
     {
@@ -30,6 +38,10 @@ public class BufferProcessingBenchmark
         return flatBuffer;
     }
 
+    /// <summary>
+    /// Evaluates processing throughput and allocation elimination profiles using dense unsigned integer bit-packing compaction routines.
+    /// </summary>
+    /// <returns>A flat primitive data array enclosure containing memory-optimized compressed state tokens.</returns>
     [Benchmark]
     public uint[] ProcessOptimizedBuffer()
     {

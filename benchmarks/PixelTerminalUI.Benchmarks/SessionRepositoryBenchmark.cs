@@ -9,10 +9,10 @@ using PixelTerminalUI.Persistence.Redis.Configuration;
 
 namespace PixelTerminalUI.Benchmarks;
 
-public abstract record BenchmarkScreenBase : TerminalScreen;
-public sealed record BenchmarkWelcomeScreen : BenchmarkScreenBase;
-public sealed record BenchmarkGamePlayScreen : BenchmarkScreenBase;
-
+/// <summary>
+/// Evaluates the end-to-end processing velocity and memory allocations of session persistence 
+/// state machines operating against optimized Redis Hash structural data layouts.
+/// </summary>
 [MemoryDiagnoser]
 [Orderer(SummaryOrderPolicy.FastestToSlowest)]
 [RankColumn]
@@ -26,6 +26,10 @@ public class SessionRepositoryBenchmark
     private BenchmarkGamePlayScreen _gamePlayScreen = null!;
     private uint[] _frameBuffer = null!;
 
+    /// <summary>
+    /// Establishes the persistence client connections, configures type resolution abstractions, 
+    /// and pre-allocates domain models before initializing execution loops.
+    /// </summary>
     [GlobalSetup]
     public void Setup()
     {
@@ -44,13 +48,11 @@ public class SessionRepositoryBenchmark
         _redisRepository = new RedisTerminalSessionRepository(NullLogger<RedisTerminalSessionRepository>.Instance, _redisMultiplexer, jsonOptions, cacheOptions);
     }
 
-    [GlobalCleanup]
-    public void Cleanup()
-    {
-        _redisMultiplexer.GetDatabase().KeyDelete($"session:{_sessionId}");
-        _redisMultiplexer.Dispose();
-    }
-
+    /// <summary>
+    /// Simulates a complete, synchronous lifecycle execution cycle of a thin client terminal 
+    /// session utilizing optimized field-level serialization into targeted Redis Hashes.
+    /// </summary>
+    /// <returns>An asynchronous task representing the complete operational simulation block.</returns>
     [Benchmark]
     public async Task RedisHash_FullSessionCycleSimulation()
     {
@@ -70,4 +72,26 @@ public class SessionRepositoryBenchmark
         // Discard expired operational states from target navigation persistence stacks
         await _redisRepository.RemoveScreenAsync(_sessionId, _welcomeScreen.Id);
     }
+
+    [GlobalCleanup]
+    public void Cleanup()
+    {
+        _redisMultiplexer.GetDatabase().KeyDelete($"session:{_sessionId}");
+        _redisMultiplexer.Dispose();
+    }
 }
+
+/// <summary>
+/// Provides a base contract definition for benchmarking terminal screen structures.
+/// </summary>
+public abstract record BenchmarkScreenBase : TerminalScreen;
+
+/// <summary>
+/// Represents a concrete entry screen variant dedicated to infrastructure benchmarking routines.
+/// </summary>
+public sealed record BenchmarkWelcomeScreen : BenchmarkScreenBase;
+
+/// <summary>
+/// Represents an interactive runtime screen variant dedicated to infrastructure benchmarking routines.
+/// </summary>
+public sealed record BenchmarkGamePlayScreen : BenchmarkScreenBase;

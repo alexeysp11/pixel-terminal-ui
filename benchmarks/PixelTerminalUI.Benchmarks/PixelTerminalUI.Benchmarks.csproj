@@ -9,12 +9,14 @@
 
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
+    <PackageReference Include="protobuf-net" Version="3.2.56" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\PixelTerminalUI.Contracts\PixelTerminalUI.Contracts.csproj" />
     <ProjectReference Include="..\..\src\PixelTerminalUI.Persistence.Redis\PixelTerminalUI.Persistence.Redis.csproj" />
     <ProjectReference Include="..\..\src\PixelTerminalUI.Engine\PixelTerminalUI.Engine.csproj" />
+    <ProjectReference Include="..\..\src\PixelTerminalUI.Transport.Grpc\PixelTerminalUI.Transport.Grpc.csproj" />
   </ItemGroup>
 
 </Project>
