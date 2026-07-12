@@ -927,6 +927,8 @@ builder.Services.AddPixelTerminalUI(options =>
 });
 ```
 
+Напиши про потенциальный IndexOutOfRangeException при передаче некорректных индексов в дельте и укажи, что оборонительные проверки намеренно вынесены за рамки этой статьи, чтобы не раздувать листинги кода.
+
 ### 7. Выбор хранилища: Redis vs MongoDB
 
 #### Проблема полиморфизма и Type Discriminators: от MongoDB к Redis
@@ -992,6 +994,66 @@ private void ConfigurePolymorphism(JsonTypeInfo typeInfo)
 - **Скорость выполнения (Mean):** Наш репозиторий на базе Redis Hash выполнил всю цепочку операций в **3 раза быстрее** (8.1 мс против 23.7 мс). Поскольку Redis удерживает все структуры данных исключительно в RAM и обрабатывает команды через быстрый неблокирующий Event Loop, накладные расходы на сетевые транзакции и ожидание дисковых подсистем (которые есть у движка WiredTiger в MongoDB) отсутствуют как класс.
 - **Аллокация памяти (Allocated):** Результаты по выделению памяти в куче удивляют еще сильнее — Redis Hash требует в **7 раз меньше памяти** (63.32 KB против 465.18 KB). Драйвер MongoDB под капотом генерирует огромное количество промежуточных объектов `BsonDocument`, пулов байт и метаданных для маппинга. Более того, при обновлении массивов истории Mongo вынужден гонять тяжелые структуры целиком. В реализации Redis Hash мы сериализуем JSON точечно и только для одного конкретного экрана. При вызове удаления (`RemoveScreenAsync`) аллокаций памяти в куче .NET не происходит вообще — команда `HDEL` отправляет в сокет лишь строковый ключ.
 - **Давление на Garbage Collector (Gen0):** Снижение аллокаций поможет снизить частоту вызова сборщика мусора первого поколения (`Gen0`) в **7 раз**. Для Stateless BDUI-движка, обрабатывающего сотни пользовательских терминальных сессий в секунду, это критически важный показатель, исключающий появление микрофризов (Stop-the-world) при отрисовке интерфейса.
+
+### HTTP vs gRPC
+
+#### Почему HTTP/1.1 и JSON не подошли для рендеринга терминала
+
+При проектировании сетевого слоя для PixelTerminalUI мы изначально опирались на стандартный стек: HTTP POST-запросы и текстовый JSON. Однако специфика терминального UI (особенно интерактивных сценариев вроде игр) требует высокой отзывчивости ввода — задержка (Latency) напрямую влияет на плавность отрисовки кадра.
+
+На практике мы столкнулись с двумя фундаментальными проблемами HTTP/JSON стека:
+- Нестабильный Latency (Jitter): Несмотря на то, что лучшие единичные HTTP-ответы укладывались в приемлемые ~50–60 мс, среднее время кадра сильно скакало, доходя до 150 мс. В сценарии, где пользователь делает паузы между нажатиями клавиш, операционная система успевает охладить TCP-сокет. Каждое новое сетевое рукопожатие (Handshake) приводило к просадкам FPS.
+- Аллокационный оверхед: Сериализация структуры экрана в текст, выделение памяти под строки JSON и последующий парсинг на клиенте нагружали Garbage Collector (GC), что приводило к микрофризам.
+
+#### Переход на Code-First gRPC: Дата-центричный подход
+
+Перевод транспорта на gRPC (HTTP/2) позволил нам уйти от ООП-наследования в контрактах к плоской бинарной композиции (TerminalResponse с опциональными Payload-блоками). Результаты локального профилирования логов Kestrel показали качественное изменение характеристик:
+- Стабилизация времени ответа: Задержка снизилась до предсказуемых 30–34 мс на транзакцию. За счёт постоянного HTTP/2 соединения (мультиплексирования) полностью исчезли пиковые задержки на переоткрытие сокетов.
+- Детерминизм кадра: График Latency выровнялся, обеспечив терминалу стабильную частоту обновления без «зубьев» и микролагов.
+
+Да, я использую хак UseConstructor = false. Из-за этого стандартные конструкторы рекордов не вызываются. Если вам нужна жесткая бизнес-валидация на входе, придется писать gRPC-интерцепторы или использовать [ProtoAfterDeserialization]
+
+#### Как замерить сетевой оверхед (Размер пакета в байтах)
+
+```csharp
+using System;
+using System.IO;
+using System.Text.Json;
+using PixelTerminalUI.Contracts.Dto;
+using PixelTerminalUI.Transport.Grpc;
+using ProtoBuf.Meta;
+
+// Initialize your custom layout schema mapping rules
+GrpcModelConfiguration.RegisterTerminalContracts();
+
+// Create sample payload mimicking a practical screen mutation (e.g. 5 modified pixels)
+TerminalResponse sampleResponse = new(
+    SessionId: Guid.NewGuid(),
+    Width: 80,
+    Height: 24,
+    FullFrame: null,
+    Delta: new DeltaPayload([
+        new(10, 4294967295),
+        new(11, 2147483648),
+        new(12, 1024),
+        new(13, 2048),
+        new(14, 4096)
+    ])
+);
+
+// 1. Measure System.Text.Json size
+byte[] jsonBytes = JsonSerializer.SerializeToUtf8Bytes(sampleResponse);
+int jsonSize = jsonBytes.Length;
+
+// 2. Measure protobuf-net size
+using MemoryStream ms = new();
+RuntimeTypeModel.Default.Serialize(ms, sampleResponse);
+int protoSize = (int)ms.Length;
+
+Console.WriteLine($"[JSON Payload Size]: {jsonSize} bytes");
+Console.WriteLine($"[Protobuf Payload Size]: {protoSize} bytes");
+Console.WriteLine($"[Bandwidth Savings]: {((1 - (double)protoSize / jsonSize) * 100):F1}% reduction");
+```
 
 ### Ограничения, компромиссы и цена решений (Trade-offs)
 
