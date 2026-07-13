@@ -20,7 +20,7 @@ The framework flattens declarative component trees of screen forms into flat pix
 * 🧵 **True Stateless Design:** Each request from a thin client is processed as an isolated, atomic transaction. The server no longer retains heavy object graphs of active forms, nested delegates, or raw sockets in RAM between user interactions.
 * 📦 **Lightweight UI Components:** Screen forms and control inputs are built entirely on top of C# records (`record`). They act as mutable data containers to optimize updates without triggering excessive heap allocations, while remaining perfectly serializable for external distributed caches.
 * ⏳ **Asynchronous Commands:** Navigation rules and validation flows are encapsulated into decoupled `ICommand` handlers backed by `ValueTask`. This guarantees ultra-responsive execution loops when communicating with databases, external APIs, and cloud resources.
-* 💾 **Process Lineage Tracking:** Out-of-the-box infrastructure to transparently serialize, persist, and recover active steps (execution breakpoints) of command state machines into an external database (MongoDB/Redis) across any available cluster node.
+* 💾 **Process Lineage Tracking:** Out-of-the-box infrastructure to transparently serialize, persist, and recover active steps (execution breakpoints) of command state machines into an external database (In-memory/Redis) across any available cluster node.
 
 ---
 
@@ -95,23 +95,6 @@ builder.Services
         .RegisterCommand<StartGameCommand>());
 ```
 
-<details>
-<summary>Alternative: Connecting to MongoDB (for archival or long-term storage)</summary>
-
-If your application requires disk persistence of sessions, you can use an alternative document-oriented provider without changing the core logic:
-
-```csharp
-builder.Services.AddMongoUserSessionRepository(
-    "mongodb://localhost:27017",
-    "TerminalGameDb",
-    setup => setup
-        .RegisterScreen<WelcomeScreen>()
-        .RegisterScreen<GamePlayScreen>()
-        .RegisterCommand<StartGameCommand>()
-);
-```
-</details>
-
 ---
 
 ## 🕹️ Demo Application
@@ -138,8 +121,7 @@ docker compose up -d --build
 docker exec -it pixel_terminal_app env PIXEL_TERMINAL_SERVER_URL=http://localhost:8080 TERM=xterm-256color dotnet /app/client/TheLostGrid.Client.dll
 ```
 
-After successfully deploying the containers, the following local endpoints will be available:
-* 📟 **Swagger Server API:** `http://localhost:5221/swagger` — for manually sending commands and testing the generation of BDUI screens.
+After successfully deploying the containers, the following local endpoint will be available:
 * 🖥️ **Redis Commander Panel:** `http://localhost:8082` — for visually analyzing the structure of fields within **Redis Hash** sessions in real time.
 
 ---

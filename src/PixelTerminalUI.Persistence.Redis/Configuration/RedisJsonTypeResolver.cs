@@ -1,9 +1,9 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
-using PixelTerminalUI.StatelessEngine.Screens;
-using PixelTerminalUI.StatelessEngine.Widgets;
-using PixelTerminalUI.StatelessEngine.Commands.Core;
+using PixelTerminalUI.Engine.Screens;
+using PixelTerminalUI.Engine.Widgets;
+using PixelTerminalUI.Engine.Commands.Core;
 
 namespace PixelTerminalUI.Persistence.Redis.Configuration;
 

@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using PixelTerminalUI.StatelessEngine.Repositories;
+using PixelTerminalUI.Engine.Repositories;
 using PixelTerminalUI.Persistence.Redis.Repositories;
-using PixelTerminalUI.StatelessEngine.Screens;
-using PixelTerminalUI.StatelessEngine.Widgets;
+using PixelTerminalUI.Engine.Screens;
+using PixelTerminalUI.Engine.Widgets;
 using PixelTerminalUI.Persistence.Redis.Configuration;
 
 namespace PixelTerminalUI.Persistence.Redis.Extensions.ServiceCollectionExtensions;

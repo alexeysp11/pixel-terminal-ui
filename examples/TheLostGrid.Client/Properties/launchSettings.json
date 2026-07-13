@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "TheLostGrid.Client": {
+      "commandName": "Project",
+      "commandLineArgs": "http://localhost:5221"
+    }
+  }
+}

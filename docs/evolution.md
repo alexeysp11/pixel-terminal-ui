@@ -637,23 +637,6 @@ builder.Services
         .RegisterCommand<StartGameCommand>());
 ```
 
-<details>
-<summary>Option 2. Alternative connection based on MongoDB</summary>
-
-If a classic document-oriented database is required, the same `ITerminalSessionRepository` contract is overridden by the Mongo plugin:
-
-```csharp
-// Connecting a unified session and frame buffer storage infrastructure to MongoDB
-builder.Services.AddMongoTerminalSessionRepository(
-    "mongodb://admin:secret_password_123@localhost:27017/?authSource=admin",
-    "TheLostGridGameDb",
-    custom => custom
-        .RegisterScreen<WelcomeScreen>()
-        .RegisterScreen<GamePlayScreen>()
-        .RegisterCommand<StartGameCommand>());
-```
-</details>
-
 > **Note on data management and session disposal:**
 >
 > Since the `PixelTerminalUI` architecture is completely stateless, the framework core is completely isolated from the database implementation details and operates exclusively through the `ITerminalSessionRepository` contract abstraction. Infrastructure plugins handle atomic entity management under the protection of end-to-end optimistic locking (`Version`).
@@ -1011,6 +994,39 @@ Below are the final benchmark results (AMD Ryzen 7 5700U processor in .NET 8):
 - Garbage Collector (Gen0) Pressure: Reducing allocations will help reduce the frequency of first-generation garbage collector (Gen0) invocations by a factor of 7. For a Stateless BDUI engine processing hundreds of user terminal sessions per second, this is a critical metric, preventing micro-freezes (stop-the-world) during interface rendering.
 
 ### Limitations, Tradeoffs, and Solution Costs (Trade-Offs)
+
+### HTTP vs. gRPC
+
+#### Why HTTP/1.1 and JSON Were Not Suitable for Terminal Rendering
+
+When designing the network layer for PixelTerminalUI, we initially relied on a standard stack: HTTP POST requests and text-based JSON. However, the specific nature of terminal UI (especially interactive scenarios like games) requires high input responsiveness—latency directly impacts the smoothness of frame rendering.
+
+In practice, we encountered two fundamental issues with the HTTP/JSON stack:
+- Unstable Latency (Jitter): Although the best individual HTTP responses were within an acceptable ~50–60 ms, the average frame time fluctuated wildly, reaching up to 150 ms. In scenarios where the user pauses between keystrokes, the operating system has time to cool the TCP socket. Each new network handshake resulted in FPS drops.
+- Allocation overhead: Serializing the screen structure to text, allocating memory for JSON strings, and subsequent parsing on the client loaded the Garbage Collector (GC), leading to micro-freezes.
+
+#### Transition to Code-First gRPC: A Data-Centric Approach
+
+Transitioning the transport to gRPC (HTTP/2) allowed us to move away from OOP inheritance in contracts to a flat binary composition (TerminalResponse with optional Payload blocks). Local profiling of Kestrel logs showed a qualitative change in performance:
+- **Response time stabilization**: Latency dropped to a predictable 30–34 ms per transaction. Due to the persistent HTTP/2 connection (multiplexing), peak latencies due to socket reopenings completely disappeared.
+- **Frame Determinism**: The Latency graph has leveled out, providing the terminal with a stable refresh rate without jitter or microlag.
+
+To achieve maximum performance, the `UseConstructor = false` optimization was applied to the `protobuf-net` configuration. By default, the library attempts to initialize deserializable types through their constructors. For C# records (`record`), this means calling hidden factory methods and checking immutability, which creates micro-allocations on the heap. Disabling constructor invocation forces the library to allocate memory for the object, bypassing the standard constructor (via `FormatterServices.GetUninitializedObject`), populating fields directly with a binary stream.
+
+*Important architectural tradeoff:* With this approach, standard validators inside record constructors simply won't work. If your system requires strict business validation of incoming packets, you'll need to either move the logic to gRPC interceptors (middleware) or use specialized callback methods with the `[ProtoAfterDeserialization]` attribute.
+
+#### Performance Benchmark Results (`BenchmarkDotNet`)
+
+To clearly illustrate the cost of the text format, we compared the marshaling speed of a standard frame via `System.Text.Json` and a binary Code-First Protobuf with constructors disabled:
+
+| Method                                | Mean     | Error   | StdDev  | Ratio | Rank | Gen0   | Allocated | Alloc Ratio |
+|-------------------------------------- |---------:|--------:|--------:|------:|-----:|-------:|----------:|------------:|
+| ExecuteCodeFirstProtobufSerialization | 519.7 ns | 1.09 ns | 0.91 ns |  0.58 |    1 |      - |       0 B |        0.00 |
+| ExecuteSystemTextJsonSerialization    | 902.3 ns | 1.31 ns | 1.09 ns |  1.00 |    2 | 0.3557 |     744 B |        1.00 |
+
+##### Analysis of results:
+- **Memory Allocation (Allocated):** By eliminating intermediate strings and suppressing constructors, Protobuf serialization achieved a respectable **Zero Allocation (0 bytes)**. Meanwhile, `System.Text.Json` allocates 744 bytes of heap memory for token parsing, generating garbage in Gen0.
+- **Processing Speed ​​(Mean):** The binary deserializer runs almost **twice as fast** (519 ns versus 902 ns). On the scale of a distributed WMS system, this saves millions of backend CPU cycles on parsing network packets.
 
 #### Shifting Load to the Transport Layer and Storage
 The transition to a Stateless architecture completely eliminated the RAM utilization issue within the application server itself (since we no longer store session state in the instance's RAM), but logically shifted this task to the storage layer. Now, for every user input (pressing Enter, initiating a scan), the engine performs a combination of read/write operations to the session repository.

@@ -1,37 +1,60 @@
-using TheLostGrid.Server.Extensions;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
+using PixelTerminalUI.Persistence.Redis.Extensions.ServiceCollectionExtensions;
+using PixelTerminalUI.Engine.Commands.DismissError;
+using PixelTerminalUI.Engine.Extensions.ServiceCollectionExtensions;
+using PixelTerminalUI.Engine.SymbolHandling;
+using PixelTerminalUI.Engine.Validators;
+using ProtoBuf.Grpc.Server;
+using Serilog;
+using TheLostGrid.Server.Infrastructure.Interceptors;
 using TheLostGrid.Server.Scenarios.CharacterCreation;
 using TheLostGrid.Server.Scenarios.DroneDeployment;
+using TheLostGrid.Server.Scenarios.Help;
+using TheLostGrid.Server.Scenarios.PowerGridTerminal;
 using TheLostGrid.Server.Scenarios.SectorNavigation;
 using TheLostGrid.Server.Scenarios.SectorScanner;
 using TheLostGrid.Server.Scenarios.TerminalHack;
 using TheLostGrid.Server.Scenarios.Welcome;
-using Serilog;
-using PixelTerminalUI.Persistence.Redis.Extensions.ServiceCollectionExtensions;
-using PixelTerminalUI.StatelessEngine.Commands.DismissError;
-using PixelTerminalUI.StatelessEngine.Extensions.ServiceCollectionExtensions;
-using PixelTerminalUI.StatelessEngine.Validators;
-using PixelTerminalUI.StatelessEngine.SymbolHandling;
-using TheLostGrid.Server.Scenarios.Help;
-using TheLostGrid.Server.Scenarios.PowerGridTerminal;
-using TheLostGrid.Server.Infrastructure.Interceptors;
+using TheLostGrid.Server.Services;
+using PixelTerminalUI.Transport.Grpc.Configuration;
 
 namespace TheLostGrid.Server;
 
+/// <summary>
+/// Provides the definitive entry point to bootstrap the pure gRPC application architecture.
+/// </summary>
 public sealed class Program
 {
+    /// <summary>
+    /// Confirms service registration schemas and maps the target immutable gRPC service endpoints.
+    /// </summary>
+    /// <param name="args">The explicit command-line arguments collection matrix passed during startup.</param>
     public static void Main(string[] args)
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-        // Composition Root: Infrastructure service collection registrations setup
-        builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
-        builder.Services.AddLogging();
+        // Bootstrap logging layers immediately to track container structural allocation phases
+        Log.Logger = new LoggerConfiguration()
+            .ReadFrom.Configuration(builder.Configuration)
+            .CreateLogger();
+
+        builder.Logging.ClearProviders();
+        builder.Logging.AddSerilog();
+
+        // Enforce Kestrel endpoints behavior to handle pure high performance HTTP/2 protocol frames without TLS
+        builder.WebHost.ConfigureKestrel(options =>
+        {
+            options.ConfigureEndpointDefaults(listenOptions =>
+            {
+                listenOptions.Protocols = HttpProtocols.Http2;
+            });
+        });
 
         // Core PixelTerminalUI engine pipeline bootstrap
         builder.Services.AddPixelTerminalUI(options =>
         {
             options.EnableDoubleBuffering = true;
+            options.DoubleBufferingThreshold = 0.3;
         });
         builder.Services.AddPixelTerminalStartup<WelcomeScreen>();
 
@@ -86,26 +109,16 @@ public sealed class Program
             return handler;
         });
 
-        builder.Services.AddModuleEndpoints();
-
-        // Serilog.
-        Log.Logger = new LoggerConfiguration()
-            .ReadFrom.Configuration(builder.Configuration)
-            .CreateLogger();
-        builder.Logging.ClearProviders();
-        builder.Logging.AddSerilog();
+        // Register high performance code-first gRPC services pipelines
+        builder.Services.AddCodeFirstGrpc();
 
         WebApplication app = builder.Build();
 
-        // HTTP Processing Pipeline pipeline configuration mapping routines execution
-        if (app.Environment.IsDevelopment())
-        {
-            app.UseSwagger();
-            app.UseSwaggerUI();
-        }
+        // Compile binary contract layouts before binding physical HTTP/2 pipeline tracks
+        GrpcModelConfiguration.RegisterTerminalContracts();
 
-        // Wire up the scanned endpoints routing blocks automatically without polluting this file code structure
-        app.MapModuleEndpoints();
+        // Explicitly map the standalone gRPC service route directly without reflection engines
+        app.MapGrpcService<TerminalGrpcService>();
 
         app.Run();
     }

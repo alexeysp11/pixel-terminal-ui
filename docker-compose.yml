@@ -1,8 +1,8 @@
 version: '3.8'
 
 services:
-  # Core Game Engine & Stateless BDUI Backend Service
-  the-lost-grid-server:
+  # Demonstration game
+  the-lost-grid:
     build:
       context: .
       dockerfile: examples/TheLostGrid.Server/Dockerfile

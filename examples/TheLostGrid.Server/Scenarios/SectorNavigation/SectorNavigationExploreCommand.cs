@@ -1,9 +1,9 @@
 ﻿using TheLostGrid.Server.Scenarios.SectorScanner;
 using TheLostGrid.Server.Scenarios.TerminalHack;
-using PixelTerminalUI.StatelessEngine.Commands.CommandContexts;
-using PixelTerminalUI.StatelessEngine.Commands.Core;
+using PixelTerminalUI.Engine.Commands.CommandContexts;
+using PixelTerminalUI.Engine.Commands.Core;
 using TheLostGrid.Server.Scenarios.DroneDeployment;
-using PixelTerminalUI.StatelessEngine.Screens;
+using PixelTerminalUI.Engine.Screens;
 using TheLostGrid.Server.Scenarios.PowerGridTerminal;
 using TheLostGrid.Server.Domain.Enums;
 

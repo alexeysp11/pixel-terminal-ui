@@ -5,7 +5,7 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PixelTerminalUI.StatelessEngine", "src\PixelTerminalUI.StatelessEngine\PixelTerminalUI.StatelessEngine.csproj", "{A61D037C-79AA-4B8B-93F9-DA1E271B5B6D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PixelTerminalUI.Engine", "src\PixelTerminalUI.Engine\PixelTerminalUI.Engine.csproj", "{A61D037C-79AA-4B8B-93F9-DA1E271B5B6D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{3FBC1DBA-8F43-4EE6-873C-BA16E88AD9A0}"
 EndProject
@@ -17,13 +17,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TheLostGrid.Server", "examp
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{D67A26AB-B1A0-4FE6-A01C-A291AF039408}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PixelTerminalUI.StatelessEngine.Tests", "tests\PixelTerminalUI.StatelessEngine.Tests\PixelTerminalUI.StatelessEngine.Tests.csproj", "{DF42D313-3AD9-4195-B472-AE2E1D9FB38E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PixelTerminalUI.Engine.Tests", "tests\PixelTerminalUI.Engine.Tests\PixelTerminalUI.Engine.Tests.csproj", "{DF42D313-3AD9-4195-B472-AE2E1D9FB38E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TheLostGrid.Client", "examples\TheLostGrid.Client\TheLostGrid.Client.csproj", "{FA774855-F346-4F54-9DEB-5B88D17A51FB}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PixelTerminalUI.Persistence.Mongo", "src\PixelTerminalUI.Persistence.Mongo\PixelTerminalUI.Persistence.Mongo.csproj", "{B1EE6667-756D-4195-A8FB-91EFE374C599}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PixelTerminalUI.Persistence.Mongo.Tests", "tests\PixelTerminalUI.Persistence.Mongo.Tests\PixelTerminalUI.Persistence.Mongo.Tests.csproj", "{16B912D5-F8B2-4202-9285-496E7FEAC06C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PixelTerminalUI.Contracts.Tests", "tests\PixelTerminalUI.Contracts.Tests\PixelTerminalUI.Contracts.Tests.csproj", "{8C2DF1B9-C156-437B-8054-6F574E78228F}"
 EndProject
@@ -34,6 +30,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PixelTerminalUI.Persistence.Redis", "src\PixelTerminalUI.Persistence.Redis\PixelTerminalUI.Persistence.Redis.csproj", "{768B063D-18F2-4496-B25C-F0F974BA7DC5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PixelTerminalUI.Persistence.Redis.Tests", "tests\PixelTerminalUI.Persistence.Redis.Tests\PixelTerminalUI.Persistence.Redis.Tests.csproj", "{FD394743-3FF0-4428-B945-C28045705ED7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PixelTerminalUI.Transport.Grpc", "src\PixelTerminalUI.Transport.Grpc\PixelTerminalUI.Transport.Grpc.csproj", "{ACD8BB37-7AFB-4BFF-A8B4-3659C7687BDF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PixelTerminalUI.Transport.Grpc.Tests", "tests\PixelTerminalUI.Transport.Grpc.Tests\PixelTerminalUI.Transport.Grpc.Tests.csproj", "{32EDD0FD-B0A1-46D6-84BD-D19B4647CAC5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -65,14 +65,6 @@ Global
 		{FA774855-F346-4F54-9DEB-5B88D17A51FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FA774855-F346-4F54-9DEB-5B88D17A51FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FA774855-F346-4F54-9DEB-5B88D17A51FB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B1EE6667-756D-4195-A8FB-91EFE374C599}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B1EE6667-756D-4195-A8FB-91EFE374C599}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B1EE6667-756D-4195-A8FB-91EFE374C599}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B1EE6667-756D-4195-A8FB-91EFE374C599}.Release|Any CPU.Build.0 = Release|Any CPU
-		{16B912D5-F8B2-4202-9285-496E7FEAC06C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{16B912D5-F8B2-4202-9285-496E7FEAC06C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{16B912D5-F8B2-4202-9285-496E7FEAC06C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{16B912D5-F8B2-4202-9285-496E7FEAC06C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{8C2DF1B9-C156-437B-8054-6F574E78228F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8C2DF1B9-C156-437B-8054-6F574E78228F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8C2DF1B9-C156-437B-8054-6F574E78228F}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -89,6 +81,14 @@ Global
 		{FD394743-3FF0-4428-B945-C28045705ED7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FD394743-3FF0-4428-B945-C28045705ED7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FD394743-3FF0-4428-B945-C28045705ED7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ACD8BB37-7AFB-4BFF-A8B4-3659C7687BDF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ACD8BB37-7AFB-4BFF-A8B4-3659C7687BDF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ACD8BB37-7AFB-4BFF-A8B4-3659C7687BDF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ACD8BB37-7AFB-4BFF-A8B4-3659C7687BDF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{32EDD0FD-B0A1-46D6-84BD-D19B4647CAC5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{32EDD0FD-B0A1-46D6-84BD-D19B4647CAC5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{32EDD0FD-B0A1-46D6-84BD-D19B4647CAC5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{32EDD0FD-B0A1-46D6-84BD-D19B4647CAC5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -100,12 +100,12 @@ Global
 		{2CD9CBC1-394B-4468-A386-F088A76E3705} = {3FBC1DBA-8F43-4EE6-873C-BA16E88AD9A0}
 		{DF42D313-3AD9-4195-B472-AE2E1D9FB38E} = {D67A26AB-B1A0-4FE6-A01C-A291AF039408}
 		{FA774855-F346-4F54-9DEB-5B88D17A51FB} = {3FBC1DBA-8F43-4EE6-873C-BA16E88AD9A0}
-		{B1EE6667-756D-4195-A8FB-91EFE374C599} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
-		{16B912D5-F8B2-4202-9285-496E7FEAC06C} = {D67A26AB-B1A0-4FE6-A01C-A291AF039408}
 		{8C2DF1B9-C156-437B-8054-6F574E78228F} = {D67A26AB-B1A0-4FE6-A01C-A291AF039408}
 		{F5A758EC-8C69-4A0D-A442-8FC780467838} = {7C5C3E35-4BE4-4135-A33F-C0EE0D7D9820}
 		{768B063D-18F2-4496-B25C-F0F974BA7DC5} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{FD394743-3FF0-4428-B945-C28045705ED7} = {D67A26AB-B1A0-4FE6-A01C-A291AF039408}
+		{ACD8BB37-7AFB-4BFF-A8B4-3659C7687BDF} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{32EDD0FD-B0A1-46D6-84BD-D19B4647CAC5} = {D67A26AB-B1A0-4FE6-A01C-A291AF039408}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {08E094FB-BF12-40FA-A1F1-21F9A09B0553}

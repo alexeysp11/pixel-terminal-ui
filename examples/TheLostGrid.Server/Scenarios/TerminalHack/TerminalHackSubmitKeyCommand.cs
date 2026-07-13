@@ -1,7 +1,7 @@
-﻿using PixelTerminalUI.StatelessEngine.Commands.CommandContexts;
-using PixelTerminalUI.StatelessEngine.Commands.Core;
+﻿using PixelTerminalUI.Engine.Commands.CommandContexts;
+using PixelTerminalUI.Engine.Commands.Core;
 using TheLostGrid.Server.Scenarios.SectorScanner;
-using PixelTerminalUI.StatelessEngine.Widgets;
+using PixelTerminalUI.Engine.Widgets;
 
 namespace TheLostGrid.Server.Scenarios.TerminalHack;
 
@@ -98,7 +98,7 @@ public sealed class TerminalHackSubmitKeyCommand : Command<OneStepCommandState>
             };
 
             context.ErrorMessage = selectedIndex == -1
-                ? "INVALID SELECTION CODE! ENTER 1, 2, OR 3"
+                ? "INVALID SELECTION CODE!"
                 : $"ACCESS DENIED! ATTEMPTS LEFT: {nextAttempts}";
 
             await context.SessionRepository.SaveActiveScreenAsync(context.SessionId, multiAttemptScreen);
