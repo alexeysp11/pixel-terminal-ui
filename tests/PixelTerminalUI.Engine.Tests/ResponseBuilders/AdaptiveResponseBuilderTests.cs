@@ -1,13 +1,18 @@
 ﻿using FluentAssertions;
 using PixelTerminalUI.Contracts.Common;
 using PixelTerminalUI.Contracts.Dto;
+using PixelTerminalUI.Engine.Extensions.ServiceCollectionExtensions;
 using PixelTerminalUI.Engine.ResponseBuilders;
 
 namespace PixelTerminalUI.Engine.Tests.ResponseBuilders;
 
 public sealed class AdaptiveResponseBuilderTests
 {
-    private readonly AdaptiveResponseBuilder _sut = new();
+    private readonly AdaptiveResponseBuilder _sut = new(new PixelTerminalUIOptions
+    {
+        EnableDoubleBuffering = true,
+        DoubleBufferingThreshold = 0.25
+    });
 
     [Fact]
     public void Build_WhenHistoricalBufferIsNull_ShouldReturnFullFramePayload()

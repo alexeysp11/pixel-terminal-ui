@@ -1,5 +1,6 @@
 ﻿using PixelTerminalUI.Contracts.Common;
 using PixelTerminalUI.Contracts.Dto;
+using PixelTerminalUI.Engine.Extensions.ServiceCollectionExtensions;
 using System.Buffers;
 
 namespace PixelTerminalUI.Engine.ResponseBuilders;
@@ -12,7 +13,13 @@ public sealed class AdaptiveResponseBuilder : IAdaptiveResponseBuilder
     /// <summary>
     /// Defines the allocation percentage barrier above which delta framing scales back into an uncompressed full presentation reload.
     /// </summary>
-    private const double ChangeThreshold = 0.25;
+    private readonly double _changeThreshold;
+
+    public AdaptiveResponseBuilder(PixelTerminalUIOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        _changeThreshold = options.DoubleBufferingThreshold;
+    }
 
     /// <summary>
     /// Compiles terminal presentation streams into a structured response package by evaluating modifications between buffer sequences.
@@ -50,7 +57,7 @@ public sealed class AdaptiveResponseBuilder : IAdaptiveResponseBuilder
             }
 
             double changeRatio = (double)mutationCount / totalCellsCount;
-            if (changeRatio > ChangeThreshold)
+            if (changeRatio > _changeThreshold)
             {
                 return new TerminalResponse(sessionId, width, height, FullFrame: new FullFramePayload(currentBuffer));
             }

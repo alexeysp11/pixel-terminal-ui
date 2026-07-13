@@ -54,6 +54,7 @@ public sealed class Program
         builder.Services.AddPixelTerminalUI(options =>
         {
             options.EnableDoubleBuffering = true;
+            options.DoubleBufferingThreshold = 0.3;
         });
         builder.Services.AddPixelTerminalStartup<WelcomeScreen>();
 
