@@ -929,8 +929,6 @@ builder.Services.AddPixelTerminalUI(options =>
 });
 ```
 
-Напиши про потенциальный IndexOutOfRangeException при передаче некорректных индексов в дельте и укажи, что оборонительные проверки намеренно вынесены за рамки этой статьи, чтобы не раздувать листинги кода.
-
 ### 7. Выбор хранилища: Redis vs MongoDB
 
 #### Проблема полиморфизма и Type Discriminators: от MongoDB к Redis
