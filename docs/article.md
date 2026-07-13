@@ -274,7 +274,7 @@ public sealed class SequenceExecutionCommand : Command<MultiStepState>
 
 From a runtime perspective, the transition looks like an O(1) jump through the enumeration index table. The command calculated the step, switched the state in memory, completed execution, and the updated `int` was returned to the Redis Hash protected by optimistic session version locking.
 
-> **Problem synchronizing backend and state versions**
+> **Problem synchronizing backend and state versions**  
 > If, during the execution of a multi-step scenario (for example, with 5 steps in step 3), a new backend version is deployed where the `enum MultiStepState` has changed (steps have been added or removed), the old `int` from Redis, when deserialized via `Unsafe.As`, will either result in an invalid business logic state or an application crash. Protection against on-the-fly state schema migration is completely ignored in the article.
 
 #### A Look into the Future: Syntactic Sugar vs. Runtime Performance
