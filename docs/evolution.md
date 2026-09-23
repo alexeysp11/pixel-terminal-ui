@@ -344,27 +344,31 @@ public sealed record WelcomeScreen : TerminalScreen
         Name = "WelcomeScreen";
         Width = 40;
         Height = 10;
-        
+
         Guid inputId = Guid.NewGuid();
         Widgets = new List<TextWidget>
         {
-            new TextWidget { Left = 2, Top = 2, Value = "WELCOME TO THE GRID" },
-            
+            new TextWidget { Id = Guid.NewGuid(), Name = "TitleLabel", Left = 2, Top = 2, Value = "WELCOME TO THE GRID" },
+
             // Easily reuse our new widget with a custom business property
-            new ClassifiedTextWidget 
-            { 
-                Left = 2, Top = 3, 
-                Value = "RESTRICTED AREA", 
+            new ClassifiedTextWidget
+            {
+                Id = Guid.NewGuid(),
+                Name = "RestrictedAreaLabel",
+                Left = 2, Top = 3,
+                Value = "RESTRICTED AREA",
                 AccessLevel = SecurityAccessLevel.Critical,
-                Foreground = ConsoleColor.Red 
+                Foreground = ConsoleColor.Red
             },
-            
-            new TextEntryWidget 
-            { 
+
+            new TextEntryWidget
+            {
                 Id = inputId,
+                Name = "StartInput",
+                Value = string.Empty,
                 Left = 2, Top = 5, Width = 10,
                 Hint = "PRESS ENTER TO START",
-                Command = new StartGameCommand { ControlId = inputId }
+                Command = new StartGameCommand { WidgetId = inputId }
             }
         };
         FocusedEntryWidgetId = inputId;
@@ -606,7 +610,7 @@ builder.Services.AddCustomTerminalRenderer<CustomWidget, CustomWidgetRenderer>()
 
 When the application starts, the engine automatically collects all registered renderers into a thread-safe registry. When the StatelessRenderer encounters your custom widget in the element tree, it instantly finds the required rendering strategy, packs the data into a bitmap, and passes it to the adaptive response builder. The developer extends the system without ever touching the library's core source code.
 
-#### Registering the Startup Entry Point (`AddPixelTerminalStartup`)
+#### Putting the Configuration Together: Initialization and Storage Wiring
 
 Thanks to the Fluent API, initializing the entire UI engine, connecting the distributed state store, and explicitly registering forms and commands on the backend is concise and declarative. Basic configuration of the framework core and frame processing pipeline is performed identically for any data provider:
 
@@ -888,7 +892,7 @@ To minimize network traffic, the engine architecture incorporates a double buffe
 
 In practice, the JSON text format imposes strict limitations on point updates. To send a single changed pixel, we need to transmit not only its new value but also service metadata: field names, quotes, curly braces, and the cell index. This causes the text delta to rapidly bloat.
 
-Let's visually calculate this math using the example of a small 40x12 screen (480 cells in total):
+Let's visually calculate this math for the JSON transport as it stood at the time (i.e., before the migration to binary protobuf covered in the "HTTP vs gRPC" chapter), using the example of a small 40x12 screen (480 cells in total):
 
 * **Option A: Send the entire screen (FullFrameResponse)**
   In JSON, this looks like a regular flat array of numbers: [12345,67890,11223,...]. A single value, including the comma separator, weighs on average 8 bytes.
@@ -905,6 +909,8 @@ However, in reality, traffic is compressed at the network level (GZIP / Brotli).
 - At the same time, the entire terminal frame (`screenBuffer`) is often filled with huge chains of identical numbers—empty cells of spaces on a black background. Network archivers compress such continuous sequences of duplicates with tremendous efficiency.
 
 Taking into account transport compression, the real economic benefit of a point delta is completely lost around **25% of changes**. This pragmatic threshold of 0.25 is fixed in the component responsible for rendering the response. If changes are small, a compact delta is sent; if the screen is redrawn extensively (opening a new form), the engine immediately drops optimization and sends a flat full frame, which, when compressed, weighs less than the delta bloated by unique indexes.
+
+> **Note:** this estimate is specific to the JSON delta format (36 bytes per mutation). After the switch to binary protobuf (see the "HTTP vs gRPC" chapter), a single mutation weighs not 36 but around 9–10 bytes, which shifts the threshold too — under gRPC, the point delta stays economical for longer, up to roughly 30% of changes.
 
 ##### The Downside of Double Buffering: Computing Overhead
 

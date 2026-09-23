@@ -36,12 +36,17 @@ public sealed class StartGameCommand : Command<OneStepCommandState>
 {
     public override OneStepCommandState State { get; set; } = OneStepCommandState.Initial;
     public override Guid Id { get; } = Guid.NewGuid();
-    public override Guid ControlId { get; set; }
+    public override Guid WidgetId { get; set; }
 
     public override async ValueTask<bool> ExecuteAsync(ICommandContext context)
     {
         // Transition to the next screen form layout
-        var nextScreen = new GamePlayScreen { Id = Guid.NewGuid(), SessionId = context.SessionId };
+        var nextScreen = new GamePlayScreen
+        {
+            Id = Guid.NewGuid(),
+            Name = nameof(GamePlayScreen),
+            SessionId = context.SessionId
+        };
         await context.SessionRepository.SaveActiveScreenAsync(context.SessionId, nextScreen);
         return true;
     }
@@ -55,17 +60,19 @@ public sealed record WelcomeScreen : TerminalScreen
         Name = "WelcomeScreen";
         Width = 40;
         Height = 10;
-        
+
         var inputId = Guid.NewGuid();
         Widgets = new List<TextWidget>
         {
-            new TextWidget { Left = 2, Top = 2, Value = "WELCOME TO THE GRID" },
-            new TextEntryWidget 
-            { 
+            new TextWidget { Id = Guid.NewGuid(), Name = "TitleLabel", Left = 2, Top = 2, Value = "WELCOME TO THE GRID" },
+            new TextEntryWidget
+            {
                 Id = inputId,
+                Name = "StartInput",
+                Value = string.Empty,
                 Left = 2, Top = 5, Width = 10,
                 Hint = "PRESS ENTER TO START",
-                Command = new StartGameCommand { ControlId = inputId }
+                Command = new StartGameCommand { WidgetId = inputId }
             }
         };
         FocusedEntryWidgetId = inputId;

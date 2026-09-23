@@ -41,27 +41,34 @@
 
 Игровой процесс разбит на изолированные обработчики команд (`Command`) и декларативные экраны интерфейса (`TerminalScreen`). Состояние шага шаринга описывается перечислением (например, `OneStepCommandState`).
 
-Ниже представлен реальный пример реализации стартового экрана и логики перехода:
+Ниже — настоящий код из `examples/TheLostGrid.Server/Scenarios/Welcome/` (в описании экрана для краткости показаны не все виджеты — полный список из 5 элементов смотрите в исходном файле `WelcomeScreen.cs`):
 
 #### 1. Изолированная команда для обработки навигации
 ```csharp
-public sealed class StartGameCommand : Command<OneStepCommandState>
+public sealed class WelcomeStartGameCommand : Command<OneStepCommandState>
 {
     public override OneStepCommandState State { get; set; } = OneStepCommandState.Initial;
     public override Guid Id { get; } = Guid.NewGuid();
-    public override Guid ControlId { get; set; }
+    public override Guid WidgetId { get; set; }
 
     public override async ValueTask<bool> ExecuteAsync(ICommandContext context)
     {
-        // Логика перехода на следующую форму
-        var nextScreen = new GamePlayScreen { Id = Guid.NewGuid(), SessionId = context.SessionId };
+        // Переход к экрану создания персонажа
+        CharacterCreationScreen nextScreen = new()
+        {
+            Id = Guid.NewGuid(),
+            Name = nameof(CharacterCreationScreen),
+            SessionId = context.SessionId,
+            ParentScreenId = context.Screen.Id
+        };
+
         await context.SessionRepository.SaveActiveScreenAsync(context.SessionId, nextScreen);
         return true;
     }
 }
 ```
 
-#### 2. Декларативное описание стартового экрана
+#### 2. Декларативное описание стартового экрана (сокращённая версия)
 ```csharp
 public sealed record WelcomeScreen : TerminalScreen
 {
@@ -69,21 +76,37 @@ public sealed record WelcomeScreen : TerminalScreen
     {
         Name = "WelcomeScreen";
         Width = 40;
-        Height = 10;
-        
-        var inputId = Guid.NewGuid();
-        Widgets = new List<TextWidget>
+        Height = 12;
+
+        TextWidget titleLabel = new()
         {
-            new TextWidget { Left = 2, Top = 2, Value = "WELCOME TO THE GRID" },
-            new TextEntryWidget 
-            { 
-                Id = inputId,
-                Left = 2, Top = 5, Width = 10,
-                Hint = "PRESS ENTER TO START",
-                Command = new StartGameCommand { ControlId = inputId }
-            }
+            Id = Guid.NewGuid(),
+            Name = "TitleLabel",
+            Left = 11, Top = 3, Width = 17,
+            Value = "THE LOST GRID TUI",
+            Visible = true,
+            Inverted = true
         };
-        FocusedEntryWidgetId = inputId;
+
+        WelcomeStartGameCommand connectionCommand = new();
+
+        TextEntryWidget hiddenInput = new()
+        {
+            Id = Guid.NewGuid(),
+            Name = "ConnectionTriggerInput",
+            Left = 2, Top = 8, Width = 36,
+            Required = false,
+            Hint = "CONNECT TO NEURAL NETWORK",
+            Visible = true,
+            Command = connectionCommand,
+            Value = string.Empty
+        };
+
+        // Явно связываем команду с виджетом, который её запускает
+        connectionCommand.WidgetId = hiddenInput.Id;
+
+        Widgets = [titleLabel, hiddenInput];
+        FocusedEntryWidgetId = hiddenInput.Id;
     }
 }
 ```
