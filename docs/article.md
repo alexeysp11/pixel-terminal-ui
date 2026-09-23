@@ -2,7 +2,7 @@
 
 [English](article.md) | [Русский](article.ru.md)
 
-## Introduction
+## 📑 Introduction
 
 While working on a warehouse management system (WMS), I encountered the specifics of text-based terminal interfaces (Terminal UIs). In such systems, the data exchange logic is built using the Backend-Driven UI (BDUI) paradigm, but in its most extreme, text-based form. Instead of transmitting a component tree or HTML markup, the server handles all the graphical work and returns a ready-made text matrix of symbols and colors to the client.
 
@@ -60,7 +60,7 @@ The engine described in this article is a server-side text matrix renderer. Its 
 
 The primary goal of this Proof of Concept (PoC) is to design a distributed state machine capable of processing each individual user input on any independent backend server instance, without maintaining persistent state in RAM.
 
-## Chapter 1. Limitations of Legacy Architectures and the Deadlock of the Stateful Model
+## 🛑 Chapter 1. Limitations of Legacy Architectures and the Deadlock of the Stateful Model
 
 When designing terminal management systems, the traditional approach relies on the Stateful model. Session state is either tightly bound to a persistent TCP connection or stored within the server's `ConcurrentDictionary`.
 
@@ -106,7 +106,7 @@ This model has three inherent architectural flaws:
 
 To overcome these limitations, it was necessary to completely rewrite the state management logic, break the synchronous Call Stack, and move the context of the steps to a distributed storage layer. We'll discuss how this is implemented using a command state machine, Redis, and a high-performance binary gRPC pipeline below.
 
-## Chapter 2. Distributed Architecture and Command State Machines
+## 🛠️ Chapter 2. Distributed Architecture and Command State Machines
 
 When it comes to Backend-Driven UI (BDUI), mobile development immediately comes to mind: the server returns a component tree (JSON/Protobuf), and the iOS or Android client parses and renders this tree. But when we descend to the level of text terminals, this model breaks down. Passing widget metadata means forcing the thin client to decide how to arrange, color, and invert them. To preserve the "dumb" terminal paradigm, the server should return not a component tree, but a **ready-made frame pixel array or its delta**.
 
@@ -295,7 +295,7 @@ The business logic of commands is completely isolated from the transport layer. 
 
 The network contract does not have REST-like JSON responses with error codes. If the validation step within a command fails (returns `false` and writes a string to `context.ErrorMessage`), the engine does not throw exceptions. It creates a new error screen record on the fly, draws this text directly in the pixel matrix on the server side, and this modified frame is sent to the gRPC channel as usual. The client remains completely "dumb" - it simply obediently displays on the physical console screen what the backend sends.
 
-## Chapter 3. Battle for Bytes: Pooling and Bitmasks
+## 📉 Chapter 3. Battle for Bytes: Pooling and Bitmasks
 
 Providing Externalized Session State on the backend inevitably increases the load on the infrastructure layers. If the engine allocates memory for new data arrays, parses heavy text structures, and sends them over the network for every user input, the system will become saturated with allocations (GC Pressure), and frame times will go far beyond the target 30 milliseconds.
 
@@ -460,7 +460,7 @@ Considering real-world transport compression of binary streams, the economic ben
 
 This empirically chosen threshold of **0.3 (30%)** is precisely what is fixed in our response rendering pipeline. If changes are small (the user enters characters into a field), an ultra-light binary delta is sent. If the screen is redrawn extensively (opening a new form, calling a menu), the engine immediately drops optimization and sends a flat full frame. When compressed, it weighs less than a delta packet overloaded with unique mutation indices.
 
-## Chapter 4. Limitations, Tradeoffs, and the Cost of Solutions (Trade-Offs)
+## 📌 Chapter 4. Limitations, Tradeoffs, and the Cost of Solutions (Trade-Offs)
 
 ### HTTP vs. gRPC
 
