@@ -2,6 +2,14 @@
 
 [English](article.md) | [Русский](article.ru.md)
 
+**Репозиторий проекта:** [github.com/alexeysp11/pixel-terminal-ui](https://github.com/alexeysp11/pixel-terminal-ui) (MIT-лицензия). В нём — исходники движка `PixelTerminalUI`, полноценная демо-игра **The Lost Grid** (TUI-игра поверх gRPC и Redis, на которой обкатывалась вся архитектура из статьи), бенчмарки на BenchmarkDotNet и `docker-compose`, поднимающий демо одной командой.
+
+![.NET 8.0](https://img.shields.io/badge/.NET-8.0-blue?style=flat-square&logo=dotnet) ![License MIT](https://img.shields.io/badge/license-MIT-brightgreen?style=flat-square) ![State: Stateless](https://img.shields.io/badge/State-True%20Stateless-brightgreen?style=flat-square)
+
+![The Lost Grid Gameplay](img/gameplay-demo.gif)
+
+*Демо-игра The Lost Grid — рабочий пример движка, описанного в статье ниже.*
+
 ## 📑 Введение
 
 В рамках работы над системой управления складом (WMS) я столкнулся со спецификой текстовых терминальных интерфейсов (Terminal UI). В таких системах логика обмена данными строится в парадигме Backend-Driven UI (BDUI), но в ее самом экстремальном, текстовом проявлении. Вместо передачи дерева компонентов или HTML-разметки, сервер полностью берет на себя всю графическую работу и возвращает клиенту готовую текстовую матрицу символов и цветов.
