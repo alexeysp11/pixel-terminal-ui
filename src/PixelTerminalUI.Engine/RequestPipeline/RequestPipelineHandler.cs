@@ -258,7 +258,7 @@ public sealed class RequestPipelineHandler(
             currentFlatBuffer,
             historicalBuffer,
             width,
-            height);
+            height) with { FocusedInput = BuildFocusedInputPayload(screen) };
 
         // Conditionally bypass persistence write calls to save networking infrastructure bandwidth costs if the cache is disabled
         if (options.EnableDoubleBuffering)
@@ -267,5 +267,38 @@ public sealed class RequestPipelineHandler(
         }
 
         return response;
+    }
+
+    /// <summary>
+    /// Computes the absolute on-screen coordinates and current text of the currently focused text entry widget,
+    /// if any, so thin clients can seed a local edit buffer and render the input cursor inline instead of a
+    /// detached prompt line.
+    /// </summary>
+    /// <param name="screen">The rendered screen instance to inspect for an active focused widget.</param>
+    /// <returns>The focused widget geometry payload, or null if no editable widget currently holds focus.</returns>
+    private static FocusedInputPayload? BuildFocusedInputPayload(TerminalScreen screen)
+    {
+        TextWidget? focusedWidget = screen.Widgets.FirstOrDefault(widget => widget.Id == screen.FocusedEntryWidgetId);
+        if (focusedWidget is not TextEntryWidget entryWidget || !entryWidget.Visible || entryWidget.Width <= 0)
+        {
+            return null;
+        }
+
+        // Password content is never exposed to the client for re-editing; only its length matters for layout,
+        // and the client already starts a masked field from an empty local buffer.
+        bool isMasked = entryWidget is PasswordEntryWidget;
+        string rawValue = isMasked ? string.Empty : entryWidget.Value ?? string.Empty;
+        string initialValue = rawValue.Length > entryWidget.Width ? rawValue[..entryWidget.Width] : rawValue;
+
+        return new FocusedInputPayload(
+            X: entryWidget.Left,
+            Y: entryWidget.Top,
+            MaxLength: entryWidget.Width,
+            IsMasked: isMasked,
+            EmptyFillChar: entryWidget.EmptyEnterSymbol,
+            InitialValue: initialValue,
+            Foreground: entryWidget.Foreground,
+            Background: entryWidget.Background,
+            Inverted: entryWidget.Inverted);
     }
 }

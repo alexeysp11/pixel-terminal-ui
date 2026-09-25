@@ -19,6 +19,7 @@ The game interface is designed in the style of classic TUI systems:
 
 * **Navigation Commands:** The player navigates text menus by entering control characters.
 * **Hotkeys:** Quickly exit (`-q: Quit`), call help on available actions in the room (`-h: Help`), or step back (`-b: Back`).
+* **Inline Input Cursor:** The server ships the focused widget's coordinates alongside every frame, and the client positions the terminal cursor right inside the rendered form widget — you type exactly where the cursor blinks, with no separate input line below the form anymore.
 * **Data Input:** The characters the user enters are not sent to the server one by one. The client application assembles the string locally and sends it to the backend only when the `Enter` is pressed.
 
 ---

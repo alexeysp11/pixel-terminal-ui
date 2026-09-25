@@ -1,4 +1,5 @@
-﻿using Grpc.Core;
+﻿using System.Text;
+using Grpc.Core;
 using Grpc.Net.Client;
 using PixelTerminalUI.Contracts.Common;
 using PixelTerminalUI.Contracts.Dto;
@@ -98,6 +99,9 @@ public static class Program
                 // Thrown only if all 5 retry attempts failed completely
                 Log.Fatal(rpcEx, "Permanent gRPC connection loss after maximum retry attempts. Status: {StatusCode}, Destination: {Url}", rpcEx.StatusCode, ServerUrl);
 
+                // Clear the frame first: the terminal cursor may still be sitting mid-widget from the last
+                // inline edit, and printing straight from there would interleave this message with the box
+                Console.Clear();
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($"\n[Fatal Network Failure]: Connection lost permanently. RPC Status: {rpcEx.Status.Detail}");
                 break;
@@ -106,6 +110,7 @@ public static class Program
             {
                 Log.Fatal(ex, "Unexpected infrastructure failure during pipeline processing.");
 
+                Console.Clear();
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($"\n[Fatal Client Error]: {ex.Message}");
                 break;
@@ -116,6 +121,7 @@ public static class Program
             {
                 Log.Error("Server returned a null payload response frame structure.");
 
+                Console.Clear();
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("\n[Client Error]: Received empty or corrupted payload matrix from server.");
                 break;
@@ -271,13 +277,13 @@ public static class Program
                 ClearBottomConsoleLine(inputLineY);
 
                 Console.ResetColor();
-                Console.Write("> ");
-
-                string? rawInput = Console.ReadLine();
-                nextUserInput = rawInput ?? string.Empty;
+                nextUserInput = ReadInlineInput(response.FocusedInput);
 
                 if (nextUserInput == "-q")
                 {
+                    // The cursor is still positioned mid-widget from the inline edit above; clear the frame
+                    // so the disconnect message prints on a clean screen instead of inside the box
+                    Console.Clear();
                     Console.ForegroundColor = ConsoleColor.Yellow;
                     Console.WriteLine("\nDisconnecting neural link session connection wrapper...");
                     break;
@@ -285,6 +291,8 @@ public static class Program
             }
             catch (Exception ex)
             {
+                Console.Clear();
+
                 // Use pattern matching to split logging and user messages based on exception type
                 if (ex is IndexOutOfRangeException or DivideByZeroException)
                 {
@@ -307,6 +315,7 @@ public static class Program
         }
 
         Console.ResetColor();
+        Console.CursorVisible = true;
         Console.WriteLine("\nSession closed. Press any key to exit terminal interface console...");
         Console.ReadKey();
     }
@@ -322,5 +331,97 @@ public static class Program
             Console.Write(new string(' ', Console.WindowWidth - 1));
             Console.SetCursorPosition(0, targetY);
         }
+    }
+
+    /// <summary>
+    /// Reads user keystrokes one at a time, echoing them inline at the on-screen position of the
+    /// currently focused input widget instead of a detached "&gt; " prompt line below the frame.
+    /// </summary>
+    /// <param name="focus">The focused widget geometry reported by the server, or null when the active screen has no focusable input.</param>
+    /// <returns>The accumulated line of text once the user presses Enter.</returns>
+    private static string ReadInlineInput(FocusedInputPayload? focus)
+    {
+        // Fallback to the legacy prompt line for screens without a focusable widget (e.g. pure informational screens)
+        if (focus is null)
+        {
+            Console.Write("> ");
+            return Console.ReadLine() ?? string.Empty;
+        }
+
+        // Seed the local buffer with whatever the server already committed for this widget, so backspace can
+        // remove previously entered characters instead of only ever appending past them
+        StringBuilder buffer = new(focus.InitialValue);
+        if (buffer.Length > focus.MaxLength)
+        {
+            buffer.Length = focus.MaxLength;
+        }
+
+        // Shift coordinates by +1 to skip the left and top border lines, matching the Delta rendering offset above.
+        // originX marks the widget's left edge; the cursor itself sits after any seeded text, at originX + buffer.Length.
+        int originX = focus.X + 1;
+        int originY = focus.Y + 1;
+
+        // Match the widget's configured colors before writing anything locally, otherwise the console's
+        // last-used colors (e.g. reset defaults) would leak into this field and visually clash with the
+        // rest of the server-rendered frame.
+        if (focus.Inverted)
+        {
+            Console.ForegroundColor = focus.Background;
+            Console.BackgroundColor = focus.Foreground;
+        }
+        else
+        {
+            Console.ForegroundColor = focus.Foreground;
+            Console.BackgroundColor = focus.Background;
+        }
+
+        // Normalize every cell past the seeded value: the server may have baked a static cursor glyph or
+        // stale content into cells beyond the current buffer end (e.g. after navigating back to a field
+        // that previously held a longer value), so repaint them as plain placeholders before editing begins.
+        Console.SetCursorPosition(originX + buffer.Length, originY);
+        for (int i = buffer.Length; i < focus.MaxLength; i++)
+        {
+            Console.Write(focus.EmptyFillChar);
+        }
+
+        Console.SetCursorPosition(originX + buffer.Length, originY);
+        Console.CursorVisible = true;
+
+        while (true)
+        {
+            ConsoleKeyInfo key = Console.ReadKey(intercept: true);
+
+            if (key.Key == ConsoleKey.Enter)
+            {
+                break;
+            }
+
+            if (key.Key == ConsoleKey.Backspace)
+            {
+                if (buffer.Length == 0)
+                {
+                    continue;
+                }
+
+                buffer.Length--;
+                Console.SetCursorPosition(originX + buffer.Length, originY);
+                Console.Write(focus.EmptyFillChar);
+                Console.SetCursorPosition(originX + buffer.Length, originY);
+                continue;
+            }
+
+            // Ignore non-printable keys (arrows, function keys, etc.) and stop once the widget's width is exhausted
+            if (char.IsControl(key.KeyChar) || buffer.Length >= focus.MaxLength)
+            {
+                continue;
+            }
+
+            buffer.Append(key.KeyChar);
+            Console.Write(focus.IsMasked ? '*' : key.KeyChar);
+        }
+
+        Console.CursorVisible = false;
+        Console.ResetColor();
+        return buffer.ToString();
     }
 }

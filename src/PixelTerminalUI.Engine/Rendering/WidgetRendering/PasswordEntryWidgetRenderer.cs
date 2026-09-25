@@ -47,8 +47,16 @@ public sealed class PasswordEntryWidgetRenderer : IWidgetRenderer
                 break;
             }
 
-            // Evaluate mask symbols dynamically inline per iteration to eliminate redundant heap string garbage creation
-            char symbol = i < valueLength ? pwdWidget.MaskChar : isFocused ? pwdWidget.EmptyEnterSymbol : ' ';
+            // Evaluate mask symbols dynamically inline per iteration to eliminate redundant heap string garbage creation.
+            // The exact insertion point additionally gets a distinct cursor glyph, matching TextEntryWidgetRenderer.
+            bool isCursorCell = isFocused && i == valueLength;
+            char symbol = i < valueLength
+                ? pwdWidget.MaskChar
+                : isCursorCell
+                    ? '_'
+                    : isFocused
+                        ? pwdWidget.EmptyEnterSymbol
+                        : ' ';
 
             // Map the layout using the strict flat continuous memory block indexing schema
             buffer[widgetTop * width + targetX] = new Pixel(

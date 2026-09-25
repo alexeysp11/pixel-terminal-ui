@@ -2,12 +2,12 @@
 
 [English](README.md) | [Русский](README.ru.md)
 
-![.NET Version](https://img.shields.io/badge/.NET-8.0-blue?style=square&logo=dotnet)
+![.NET Version](https://img.shields.io/badge/.NET-10.0-blue?style=square&logo=dotnet)
 ![Architecture](https://img.shields.io/badge/Architecture-Backend--Driven%20UI-orange?style=square)
 ![State](https://img.shields.io/badge/State-True%20Stateless-brightgreen?style=square)
 ![Storage](https://img.shields.io/static/v1?label=Storage&message=Extensible%20%20Interface-driven&color=blue)
 
-A **Stateless UI engine** based on **Backend-Driven UI (BDUI)** architecture designed for text terminals (TUI) running on .NET 8.
+A **Stateless UI engine** based on **Backend-Driven UI (BDUI)** architecture designed for text terminals (TUI) running on .NET 10.
 
 The framework flattens declarative component trees of screen forms into flat pixel matrices, completely abstracting the business logic from the transport layer. This allows streaming the user interface via any protocol (JSON/HTTP, gRPC, TCP sockets) to thin clients (rugged handheld computers/PDAs, standard OS consoles, custom mobile apps) without holding session state inside the server memory.
 
@@ -141,7 +141,7 @@ The project is being developed as an experimental R&D sandbox. Current implement
 - [x] **Double Buffering:** Storing the previous session frame on the server to calculate the change delta and send only the changed pixels to the client.
 - [x] **Binary Protocol (Bit Packing):** Packing the symbol, `ConsoleColor` colors, and pixel inverse into a single 4-byte `uint` using bitwise shifts (reducing network overhead).
 - [x] **Redis Hash Persistence:** Migrating hot UI state and frame buffers from MongoDB to Redis Hash atomic fields to reduce memory allocations ([Issue #2](https://github.com/alexeysp11/pixel-terminal-ui/issues/2)).
+- [x] **Server-Driven Focus & Inline Input Cursor:** The server computes the focused widget's coordinates and ships them alongside the frame; the thin client positions the native terminal cursor right inside the rendered widget and echoes keystrokes inline, with no separate `>` prompt line below the form ([Issue #1](https://github.com/alexeysp11/pixel-terminal-ui/issues/1)).
 
 ### ⏳ In Development & Backlog
-- [ ] **Server-Driven Focus & Inline Input Cursor**: Implementing server-side coordinate mapping for focused text entries. This enables rendering the blinking input cursor (`_`) directly inside the pixel matrix layout instead of handling transactions via the bottom console input line ([Issue #1](https://github.com/alexeysp11/pixel-terminal-ui/issues/1)).
 - [ ] **Observability Extension:** Integration of the OpenTelemetry Lightweight Agent (OTLP) to automatically collect Kestrel metrics and trace command execution chains without adding codebase bloat.

@@ -4,7 +4,7 @@
 
 **Project repository:** [github.com/alexeysp11/pixel-terminal-ui](https://github.com/alexeysp11/pixel-terminal-ui) (MIT license). It contains the `PixelTerminalUI` engine source, a full demo game called **The Lost Grid** (a TUI game running on gRPC and Redis, which is what the architecture in this article was battle-tested on), BenchmarkDotNet benchmarks, and a `docker-compose` setup that brings the demo up with a single command.
 
-![.NET 8.0](https://img.shields.io/badge/.NET-8.0-blue?style=flat-square&logo=dotnet) ![License MIT](https://img.shields.io/badge/license-MIT-brightgreen?style=flat-square) ![State: Stateless](https://img.shields.io/badge/State-True%20Stateless-brightgreen?style=flat-square)
+![.NET 8.0](https://img.shields.io/badge/.NET-10.0-blue?style=flat-square&logo=dotnet) ![License MIT](https://img.shields.io/badge/license-MIT-brightgreen?style=flat-square) ![State: Stateless](https://img.shields.io/badge/State-True%20Stateless-brightgreen?style=flat-square)
 
 ![The Lost Grid Gameplay](img/gameplay-demo.gif)
 

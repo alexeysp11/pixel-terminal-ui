@@ -2,12 +2,12 @@
 
 [English](README.md) | [Русский](README.ru.md)
 
-![.NET Version](https://img.shields.io/badge/.NET-8.0-blue?style=square&logo=dotnet)
+![.NET Version](https://img.shields.io/badge/.NET-10.0-blue?style=square&logo=dotnet)
 ![Architecture](https://img.shields.io/badge/Architecture-Backend--Driven%20UI-orange?style=square)
 ![State](https://img.shields.io/badge/State-True%20Stateless-brightgreen?style=square)
 ![Storage](https://img.shields.io/static/v1?label=Storage&message=Extensible%20%20Interface-driven&color=blue)
 
-**Stateless UI-движок** на базе архитектуры **Backend-Driven UI (BDUI)** для текстовых терминалов (TUI) на .NET 8.
+**Stateless UI-движок** на базе архитектуры **Backend-Driven UI (BDUI)** для текстовых терминалов (TUI) на .NET 10.
 
 Фреймворк преобразует декларативные древовидные структуры экранных форм в плоские матрицы пикселей, полностью абстрагируя бизнес-логику от транспортного слоя. Это позволяет транслировать интерфейс через любой протокол (JSON/HTTP, gRPC, TCP-сокеты) на тонкие клиенты (ТСД, консоли, кастомные мобильные приложения), не удерживая состояние сессии в памяти сервера.
 
@@ -141,7 +141,7 @@ docker exec -it pixel_terminal_app env PIXEL_TERMINAL_SERVER_URL=http://localhos
 - [x] **Double Buffering:** Хранение предыдущего кадра сессии на сервере для вычисления дельты изменений и отправки клиенту только изменившихся пикселей.
 - [x] **Бинарный протокол (Bit Packing):** Упаковка символа, цветов `ConsoleColor` и инверсии пикселя в один 4-байтовый `uint` через побитовые сдвиги (сокращение сетевого оверхеда).
 - [x] **Redis Hash Persistence:** Миграция горячего UI-стейта и кадровых буферов с MongoDB на атомарные поля Redis Hash для снижения аллокаций памяти ([Issue #2](https://github.com/alexeysp11/pixel-terminal-ui/issues/2)).
+- [x] **Инлайновый ввод и серверное управление фокусом:** Сервер вычисляет координаты активного поля ввода и передаёт их клиенту вместе с кадром; тонкий клиент позиционирует нативный курсор терминала прямо внутри отрисованного виджета и печатает символы посимвольно, без отдельной строки `>` под формой ([Issue #1](https://github.com/alexeysp11/pixel-terminal-ui/issues/1)).
 
 ### ⏳ В процессе разработки & Бэклог
-- [ ] **Инлайновый ввод и серверное управление фокусом**: Реализация маппинга координат активного инпута на стороне сервера. Это позволит отрисовывать курсор ввода (`_`) прямо внутри сгенерированной пиксельной матрицы, избавив пользователя от необходимости вводить команды в отдельной строке под формой ([Issue #1](https://github.com/alexeysp11/pixel-terminal-ui/issues/1)).
 - [ ] **Observability Extension:** Интеграция легковесного агента OpenTelemetry (OTLP) для автоматического сбора метрик Kestrel и трейсинга цепочек выполнения команд без раздувания кодовой базы.

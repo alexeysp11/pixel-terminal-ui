@@ -94,17 +94,17 @@ public sealed class TextEntryWidgetRendererTests : BaseWidgetRendererTests
 
         // Expected output grid (8x3):
         // Line 0: "        "
-        // Line 1: " ABC... " (Left=1, value is "ABC", remaining 3 characters of the total Width=6 are filled with dots '.')
+        // Line 1: " ABC_.. " (Left=1, value is "ABC"; the exact insertion point renders as a cursor glyph '_', the remaining 2 cells of Width=6 are filled with dots '.')
         // Line 2: "        "
         string expectedVisualSnapshot =
             "        " + Environment.NewLine +
-            " ABC... " + Environment.NewLine +
+            " ABC_.. " + Environment.NewLine +
             "        ";
 
         // Assert
         actualVisualSnapshot
             .Should()
-            .Be(expectedVisualSnapshot, "because focused fields must display their designated EmptyEnterSymbol to give the user a clear visual text insertion guide layout");
+            .Be(expectedVisualSnapshot, "because focused fields must mark the exact insertion point with a cursor glyph and display their designated EmptyEnterSymbol for the remaining trailing cells");
     }
 
     [Fact]
@@ -176,16 +176,17 @@ public sealed class TextEntryWidgetRendererTests : BaseWidgetRendererTests
         renderer.Draw(inputBuffer, entryWidget, focusedWidgetId, width, height);
         string actualVisualSnapshot = ConvertFlatBufferToVisualString(inputBuffer, width, height);
 
-        // Expecting the full 8x3 grid output representation
+        // Expecting the full 8x3 grid output representation. The first cell (the insertion point of an
+        // empty value) renders as the cursor glyph '_', the remaining cells fall back to EmptyEnterSymbol '*'.
         string expectedVisualSnapshot =
-            "******* " + Environment.NewLine +
+            "_****** " + Environment.NewLine +
             "        " + Environment.NewLine +
             "        ";
 
         // Assert
         actualVisualSnapshot
             .Should()
-            .Be(expectedVisualSnapshot, "because even when drawing placeholder hint text, active focus rules must still apply trailing empty enter symbols across the whole layout width");
+            .Be(expectedVisualSnapshot, "because even when drawing placeholder hint text, active focus rules must still mark the insertion point with a cursor glyph before falling back to empty enter symbols");
     }
 
     [Fact]

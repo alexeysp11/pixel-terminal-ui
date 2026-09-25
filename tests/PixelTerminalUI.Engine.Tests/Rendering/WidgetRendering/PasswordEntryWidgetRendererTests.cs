@@ -92,16 +92,17 @@ public sealed class PasswordEntryWidgetRendererTests : BaseWidgetRendererTests
         string actualVisualSnapshot = ConvertFlatBufferToVisualString(inputBuffer, width, height);
 
         // Expected output grid (8x3):
-        // Left=0, value "AB" masked as "XX", remaining up to Width=7 filled with active focus symbol '#'
+        // Left=0, value "AB" masked as "XX", the exact insertion point renders as the cursor glyph '_',
+        // and the remaining cells up to Width=7 are filled with the active focus symbol '#'
         string expectedVisualSnapshot =
-            "XX##### " + Environment.NewLine +
+            "XX_#### " + Environment.NewLine +
             "        " + Environment.NewLine +
             "        ";
 
         // Assert
         actualVisualSnapshot
             .Should()
-            .Be(expectedVisualSnapshot, "because custom masking characters override defaults and trailing active anchors fill empty spots layout configurations");
+            .Be(expectedVisualSnapshot, "because custom masking characters override defaults, the insertion point is marked with a cursor glyph, and trailing active anchors fill remaining empty spots");
     }
 
     [Fact]
@@ -171,15 +172,16 @@ public sealed class PasswordEntryWidgetRendererTests : BaseWidgetRendererTests
         renderer.Draw(inputBuffer, pwdWidget, pwdWidget.Id, width, height);
         string actualVisualSnapshot = ConvertFlatBufferToVisualString(inputBuffer, width, height);
 
+        // The insertion point of an empty value renders as the cursor glyph '_', the remaining cells fall back to EmptyEnterSymbol '.'
         string expectedVisualSnapshot =
-            "........" + Environment.NewLine +
+            "_......." + Environment.NewLine +
             "        " + Environment.NewLine +
             "        ";
 
         // Assert
         actualVisualSnapshot
             .Should()
-            .Be(expectedVisualSnapshot, "because an active empty password widget must project padding enter anchors without exposing structural string hints");
+            .Be(expectedVisualSnapshot, "because an active empty password widget must mark its insertion point with a cursor glyph and project padding enter anchors without exposing structural string hints");
     }
 
     [Fact]

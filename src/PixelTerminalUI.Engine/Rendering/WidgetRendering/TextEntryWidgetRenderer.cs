@@ -47,7 +47,16 @@ public sealed class TextEntryWidgetRenderer : IWidgetRenderer
                 break;
             }
 
-            char symbol = i < textToDraw.Length ? textToDraw[i] : isFocused ? entryWidget.EmptyEnterSymbol : ' ';
+            // Mark the exact insertion point with a distinct cursor glyph so clients that do not
+            // position a native terminal cursor still get a visible marker inside the rendered matrix
+            bool isCursorCell = isFocused && i == textToDraw.Length;
+            char symbol = i < textToDraw.Length
+                ? textToDraw[i]
+                : isCursorCell
+                    ? '_'
+                    : isFocused
+                        ? entryWidget.EmptyEnterSymbol
+                        : ' ';
 
             // Map the layout using the strict flat continuous memory block indexing schema
             buffer[widgetTop * width + targetX] = new Pixel(
