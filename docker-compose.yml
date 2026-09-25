@@ -11,7 +11,7 @@ services:
       - "5221:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__Redis=pixel-terminal-cache:6379,password=secret_password_123,abortConnect=false
+      - ConnectionStrings__Redis=pixel-terminal-cache:6379,abortConnect=false
       - Serilog__MinimumLevel__Default=Information
       - Serilog__MinimumLevel__Override__Microsoft=Warning
       - Serilog__WriteTo__0__Name=Console
@@ -28,13 +28,13 @@ services:
   pixel-terminal-cache:
     image: redis:alpine
     container_name: pixel_terminal_cache
-    command: redis-server --requirepass secret_password_123 --appendonly yes
+    command: redis-server --appendonly yes
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "secret_password_123", "ping"]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -47,7 +47,7 @@ services:
     image: ghcr.io/joeferner/redis-commander:latest
     restart: always
     environment:
-      - REDIS_HOSTS=local:pixel-terminal-cache:6379:0:secret_password_123
+      - REDIS_HOSTS=local:pixel-terminal-cache:6379:0
     ports:
       - "8082:8081"
     depends_on:

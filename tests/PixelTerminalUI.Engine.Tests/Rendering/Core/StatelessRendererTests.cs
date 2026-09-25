@@ -204,16 +204,16 @@ public sealed class StatelessRendererTests
 
         // Expected grid representation (8x3 grid):
         // Line 0: "        " (8 spaces)
-        // Line 1: " ...... " (1 space, 6 dots reflecting EmptyEnterSymbol, 1 space)
+        // Line 1: " _..... " (1 space, cursor glyph at the insertion point, 5 dots reflecting EmptyEnterSymbol, 1 space)
         // Line 2: "        " (8 spaces)
         string expectedVisualSnapshot =
             "        " + Environment.NewLine +
-            " ...... " + Environment.NewLine +
+            " _..... " + Environment.NewLine +
             "        ";
 
         actualVisualSnapshot
             .Should()
-            .Be(expectedVisualSnapshot, "because a focused editable widget with no text value must display its designated empty enter symbols across its entire layout width");
+            .Be(expectedVisualSnapshot, "because a focused editable widget with no text value must mark its insertion point with a cursor glyph and display its designated empty enter symbols for the remaining layout width");
     }
 
     [Fact]
@@ -261,11 +261,11 @@ public sealed class StatelessRendererTests
         string actualVisualSnapshot = ConvertFlatBufferToVisualString(inputBuffer, screen.Width, screen.Height);
 
         // Expected full 10x3 screen grid representation:
-        // Line 0: "....      " -> Active widget drawn at Top=0 with dots, length 4, total width 10
+        // Line 0: "_...      " -> Active widget drawn at Top=0; the insertion point renders as cursor glyph '_', followed by 3 dots, total width 10
         // Line 1: "          " -> Empty row padding
         // Line 2: "   Scan   " -> The Hint "Scan" centered precisely at the bottom line (Height - 1 = 2)
         string expectedVisualSnapshot =
-            "....      " + Environment.NewLine +
+            "_...      " + Environment.NewLine +
             "          " + Environment.NewLine +
             "   Scan   ";
 

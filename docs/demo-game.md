@@ -19,6 +19,7 @@ The game interface is designed in the style of classic TUI systems:
 
 * **Navigation Commands:** The player navigates text menus by entering control characters.
 * **Hotkeys:** Quickly exit (`-q: Quit`), call help on available actions in the room (`-h: Help`), or step back (`-b: Back`).
+* **Inline Input Cursor:** The server ships the focused widget's coordinates alongside every frame, and the client positions the terminal cursor right inside the rendered form widget — you type exactly where the cursor blinks, with no separate input line below the form anymore.
 * **Data Input:** The characters the user enters are not sent to the server one by one. The client application assembles the string locally and sends it to the backend only when the `Enter` is pressed.
 
 ---
@@ -41,27 +42,34 @@ The project is split into two decoupled components communicating over the networ
 
 Gameplay flow is broken down into isolated command handlers (`Command`) and declarative layout definitions (`TerminalScreen`). The shared step state is represented by an enum (e.g., `OneStepCommandState`).
 
-Below is a real-world example of how a startup screen and its transition logic are implemented in the project:
+Below is the actual code from `examples/TheLostGrid.Server/Scenarios/Welcome/` (the screen definition shows a trimmed widget list for brevity — see the full 5-widget version in `WelcomeScreen.cs`):
 
 #### 1. Isolated Navigation Command
 ```csharp
-public sealed class StartGameCommand : Command<OneStepCommandState>
+public sealed class WelcomeStartGameCommand : Command<OneStepCommandState>
 {
     public override OneStepCommandState State { get; set; } = OneStepCommandState.Initial;
     public override Guid Id { get; } = Guid.NewGuid();
-    public override Guid ControlId { get; set; }
+    public override Guid WidgetId { get; set; }
 
     public override async ValueTask<bool> ExecuteAsync(ICommandContext context)
     {
-        // Transition logic to the next form layout
-        var nextScreen = new GamePlayScreen { Id = Guid.NewGuid(), SessionId = context.SessionId };
+        // Transition to the character creation screen
+        CharacterCreationScreen nextScreen = new()
+        {
+            Id = Guid.NewGuid(),
+            Name = nameof(CharacterCreationScreen),
+            SessionId = context.SessionId,
+            ParentScreenId = context.Screen.Id
+        };
+
         await context.SessionRepository.SaveActiveScreenAsync(context.SessionId, nextScreen);
         return true;
     }
 }
 ```
 
-#### 2. Declarative Welcome Screen Layout
+#### 2. Declarative Welcome Screen Layout (trimmed)
 ```csharp
 public sealed record WelcomeScreen : TerminalScreen
 {
@@ -69,21 +77,37 @@ public sealed record WelcomeScreen : TerminalScreen
     {
         Name = "WelcomeScreen";
         Width = 40;
-        Height = 10;
-        
-        var inputId = Guid.NewGuid();
-        Widgets = new List<TextWidget>
+        Height = 12;
+
+        TextWidget titleLabel = new()
         {
-            new TextWidget { Left = 2, Top = 2, Value = "WELCOME TO THE GRID" },
-            new TextEntryWidget 
-            { 
-                Id = inputId,
-                Left = 2, Top = 5, Width = 10,
-                Hint = "PRESS ENTER TO START",
-                Command = new StartGameCommand { ControlId = inputId }
-            }
+            Id = Guid.NewGuid(),
+            Name = "TitleLabel",
+            Left = 11, Top = 3, Width = 17,
+            Value = "THE LOST GRID TUI",
+            Visible = true,
+            Inverted = true
         };
-        FocusedEntryWidgetId = inputId;
+
+        WelcomeStartGameCommand connectionCommand = new();
+
+        TextEntryWidget hiddenInput = new()
+        {
+            Id = Guid.NewGuid(),
+            Name = "ConnectionTriggerInput",
+            Left = 2, Top = 8, Width = 36,
+            Required = false,
+            Hint = "CONNECT TO NEURAL NETWORK",
+            Visible = true,
+            Command = connectionCommand,
+            Value = string.Empty
+        };
+
+        // Explicitly link the command back to the widget that triggers it
+        connectionCommand.WidgetId = hiddenInput.Id;
+
+        Widgets = [titleLabel, hiddenInput];
+        FocusedEntryWidgetId = hiddenInput.Id;
     }
 }
 ```

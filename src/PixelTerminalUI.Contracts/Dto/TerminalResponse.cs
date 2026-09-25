@@ -8,4 +8,5 @@ public sealed record TerminalResponse(
     int Width,
     int Height,
     FullFramePayload? FullFrame = null,
-    DeltaPayload? Delta = null);
+    DeltaPayload? Delta = null,
+    FocusedInputPayload? FocusedInput = null);

@@ -37,7 +37,8 @@ public static class GrpcModelConfiguration
             .Add(2, nameof(TerminalResponse.Width))
             .Add(3, nameof(TerminalResponse.Height))
             .Add(4, nameof(TerminalResponse.FullFrame))
-            .Add(5, nameof(TerminalResponse.Delta));
+            .Add(5, nameof(TerminalResponse.Delta))
+            .Add(6, nameof(TerminalResponse.FocusedInput));
 
         // Configure nested data segments containing complete screen matrix representations
         MetaType fullFrameMeta = RuntimeTypeModel.Default.Add(typeof(FullFramePayload), false);
@@ -48,6 +49,20 @@ public static class GrpcModelConfiguration
         MetaType deltaMeta = RuntimeTypeModel.Default.Add(typeof(DeltaPayload), false);
         deltaMeta.UseConstructor = false;
         deltaMeta.Add(1, nameof(DeltaPayload.Mutations));
+
+        // Configure nested data segments containing the geometry of the currently focused input widget
+        MetaType focusedInputMeta = RuntimeTypeModel.Default.Add(typeof(FocusedInputPayload), false);
+        focusedInputMeta.UseConstructor = false;
+        focusedInputMeta
+            .Add(1, nameof(FocusedInputPayload.X))
+            .Add(2, nameof(FocusedInputPayload.Y))
+            .Add(3, nameof(FocusedInputPayload.MaxLength))
+            .Add(4, nameof(FocusedInputPayload.IsMasked))
+            .Add(5, nameof(FocusedInputPayload.EmptyFillChar))
+            .Add(6, nameof(FocusedInputPayload.InitialValue))
+            .Add(7, nameof(FocusedInputPayload.Foreground))
+            .Add(8, nameof(FocusedInputPayload.Background))
+            .Add(9, nameof(FocusedInputPayload.Inverted));
 
         // Configure structural attributes mapping target single pixel change matrix indexes
         MetaType mutationMeta = RuntimeTypeModel.Default.Add(typeof(PixelMutation), false);

@@ -1,0 +1,22 @@
+<Solution>
+  <Folder Name="/benchmarks/">
+    <Project Path="benchmarks/PixelTerminalUI.Benchmarks/PixelTerminalUI.Benchmarks.csproj" />
+  </Folder>
+  <Folder Name="/examples/">
+    <Project Path="examples/TheLostGrid.Client/TheLostGrid.Client.csproj" />
+    <Project Path="examples/TheLostGrid.Server.Tests/TheLostGrid.Server.Tests.csproj" />
+    <Project Path="examples/TheLostGrid.Server/TheLostGrid.Server.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/PixelTerminalUI.Contracts/PixelTerminalUI.Contracts.csproj" />
+    <Project Path="src/PixelTerminalUI.Engine/PixelTerminalUI.Engine.csproj" />
+    <Project Path="src/PixelTerminalUI.Persistence.Redis/PixelTerminalUI.Persistence.Redis.csproj" />
+    <Project Path="src/PixelTerminalUI.Transport.Grpc/PixelTerminalUI.Transport.Grpc.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/PixelTerminalUI.Contracts.Tests/PixelTerminalUI.Contracts.Tests.csproj" />
+    <Project Path="tests/PixelTerminalUI.Engine.Tests/PixelTerminalUI.Engine.Tests.csproj" />
+    <Project Path="tests/PixelTerminalUI.Persistence.Redis.Tests/PixelTerminalUI.Persistence.Redis.Tests.csproj" />
+    <Project Path="tests/PixelTerminalUI.Transport.Grpc.Tests/PixelTerminalUI.Transport.Grpc.Tests.csproj" />
+  </Folder>
+</Solution>

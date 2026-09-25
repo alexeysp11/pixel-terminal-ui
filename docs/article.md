@@ -1,8 +1,16 @@
-# Distributed Rendering in the Console: Porting a TUI Engine State Machine to gRPC and Redis
+# Backend-Driven UI for Text Terminals: Freeing a TUI Engine from In-Memory State
 
 [English](article.md) | [Русский](article.ru.md)
 
-## Introduction
+**Project repository:** [github.com/alexeysp11/pixel-terminal-ui](https://github.com/alexeysp11/pixel-terminal-ui) (MIT license). It contains the `PixelTerminalUI` engine source, a full demo game called **The Lost Grid** (a TUI game running on gRPC and Redis, which is what the architecture in this article was battle-tested on), BenchmarkDotNet benchmarks, and a `docker-compose` setup that brings the demo up with a single command.
+
+![.NET 8.0](https://img.shields.io/badge/.NET-10.0-blue?style=flat-square&logo=dotnet) ![License MIT](https://img.shields.io/badge/license-MIT-brightgreen?style=flat-square) ![State: Stateless](https://img.shields.io/badge/State-True%20Stateless-brightgreen?style=flat-square)
+
+![The Lost Grid Gameplay](img/gameplay-demo.gif)
+
+*The Lost Grid demo game — a working example of the engine described below.*
+
+## 📑 Introduction
 
 While working on a warehouse management system (WMS), I encountered the specifics of text-based terminal interfaces (Terminal UIs). In such systems, the data exchange logic is built using the Backend-Driven UI (BDUI) paradigm, but in its most extreme, text-based form. Instead of transmitting a component tree or HTML markup, the server handles all the graphical work and returns a ready-made text matrix of symbols and colors to the client.
 
@@ -60,7 +68,7 @@ The engine described in this article is a server-side text matrix renderer. Its 
 
 The primary goal of this Proof of Concept (PoC) is to design a distributed state machine capable of processing each individual user input on any independent backend server instance, without maintaining persistent state in RAM.
 
-## Chapter 1. Limitations of Legacy Architectures and the Deadlock of the Stateful Model
+## 🛑 Chapter 1. Limitations of Legacy Architectures and the Deadlock of the Stateful Model
 
 When designing terminal management systems, the traditional approach relies on the Stateful model. Session state is either tightly bound to a persistent TCP connection or stored within the server's `ConcurrentDictionary`.
 
@@ -106,7 +114,7 @@ This model has three inherent architectural flaws:
 
 To overcome these limitations, it was necessary to completely rewrite the state management logic, break the synchronous Call Stack, and move the context of the steps to a distributed storage layer. We'll discuss how this is implemented using a command state machine, Redis, and a high-performance binary gRPC pipeline below.
 
-## Chapter 2. Distributed Architecture and Command State Machines
+## 🛠️ Chapter 2. Distributed Architecture and Command State Machines
 
 When it comes to Backend-Driven UI (BDUI), mobile development immediately comes to mind: the server returns a component tree (JSON/Protobuf), and the iOS or Android client parses and renders this tree. But when we descend to the level of text terminals, this model breaks down. Passing widget metadata means forcing the thin client to decide how to arrange, color, and invert them. To preserve the "dumb" terminal paradigm, the server should return not a component tree, but a **ready-made frame pixel array or its delta**.
 
@@ -277,13 +285,11 @@ From a runtime perspective, the transition looks like an O(1) jump through the e
 > **Problem synchronizing backend and state versions**  
 > If, during the execution of a multi-step scenario (for example, with 5 steps in step 3), a new backend version is deployed where the `enum MultiStepState` has changed (steps have been added or removed), the old `int` from Redis, when deserialized via `Unsafe.As`, will either result in an invalid business logic state or an application crash. Protection against on-the-fly state schema migration is completely ignored in the article.
 
-#### A Look into the Future: Syntactic Sugar vs. Runtime Performance
+#### Why Not a Fluent API Instead of switch-case
 
-From the end developer's perspective, declarative Fluent chains in the Workflow Core style (e.g., `.StartWith<Step1>().Next<Step2>().Then<Step3>()`) would be much more elegant than cumbersome switch-case blocks within a single command class.
+From the end developer's perspective, declarative Fluent chains in the Workflow Core style (e.g., `.StartWith<Step1>().Next<Step2>().Then<Step3>()`) would look much more elegant than cumbersome switch-case blocks within a single command class.
 
-However, it's important to understand the cost of such abstraction in a distributed system. Under the hood of any "beautiful" Fluent API, there inevitably resides a state machine that jumps between state tokens. For ultra-low-latency systems (where every nanosecond matters), the classic switch provides the fastest possible enumeration table navigation in O(1) time without constructing intermediate chains of objects in memory.
-
-The ideal development vector here seems to be the intersection of Fluent descriptions with Source Generators (code generation): when the developer describes a business process in beautiful Fluent code, the compiler unfolds it into the same flat, aggressively inlined switch case at build time, preserving both code purity and Zero Allocation at runtime.
+However, it's important to understand the cost of such abstraction in a distributed system. Under the hood of any "beautiful" Fluent API, there inevitably resides the exact same state machine jumping between state tokens — just hidden behind a layer of abstractions and virtual calls. For ultra-low-latency systems (where every nanosecond matters), the classic switch provides the fastest possible enumeration table navigation in O(1) time without constructing intermediate chains of objects in memory. We deliberately chose directness over syntactic sugar; for how the convenience of a Fluent description could be brought back without losing that speed, see Chapter 4.
 
 ### State Machine Relationship with Frame Rendering and Error Handling
 
@@ -297,7 +303,7 @@ The business logic of commands is completely isolated from the transport layer. 
 
 The network contract does not have REST-like JSON responses with error codes. If the validation step within a command fails (returns `false` and writes a string to `context.ErrorMessage`), the engine does not throw exceptions. It creates a new error screen record on the fly, draws this text directly in the pixel matrix on the server side, and this modified frame is sent to the gRPC channel as usual. The client remains completely "dumb" - it simply obediently displays on the physical console screen what the backend sends.
 
-## Chapter 3. Battle for Bytes: Pooling and Bitmasks
+## 📉 Chapter 3. Battle for Bytes: Pooling and Bitmasks
 
 Providing Externalized Session State on the backend inevitably increases the load on the infrastructure layers. If the engine allocates memory for new data arrays, parses heavy text structures, and sends them over the network for every user input, the system will become saturated with allocations (GC Pressure), and frame times will go far beyond the target 30 milliseconds.
 
@@ -353,7 +359,7 @@ The comparison was between the serialization of high-level pixel models (Legacy)
 
 ##### Analysis of results:
 * **Memory allocations (Allocated):** Replacing the object array with a primitive array reduced memory allocations in the managed heap by **3x** (from 5.65 KB to 1.9 KB). This significantly reduces the frequency of garbage collector (GC) runs in high-load scenarios.
-* **Computational speed (Mean):** Buffer processing and preparation speed increased by **8%** due to the elimination of allocation overhead and the execution of packing operations directly in processor registers. The main performance gain at this stage is achieved by reducing the load on the serializer and minimizing network packet size.
+* **Computational speed (Mean):** The CPU-time gain here is modest — about **8%** (1.957 μs → 1.807 μs), and it shouldn't be overstated: on this isolated stage, the difference mostly comes from the absence of allocation overhead rather than the register-level packing itself. The main effect of this step isn't speed — it's the threefold drop in allocations, and consequently less data to serialize and send over the network afterwards (see Chapter 3).
 
 ### Optimizing hot rendering paths via `ArrayPool`
 
@@ -458,11 +464,11 @@ However, gRPC runs on top of HTTP/2, which uses header compression (HPACK) and o
 - **A full frame** (`screen_buffer`) often contains long, continuous strings of identical numbers—empty spaces of the standard background color. Network archivers collapse such duplicates with colossal efficiency, compressing 1.9 KB down to almost a couple hundred bytes.
 - **In a delta packet**, index values ​​(e.g., `162`, `163`, `164`) are sequential, but they are unique, making compression algorithms less efficient than with a monotonic array of spaces.
 
-Considering real-world transport compression of binary streams, the economic benefit of a point delta begins to diminish around **30% of changes**.
+Considering real-world transport compression of binary streams, the economic benefit of a point delta begins to diminish around **30% of changes**. One caveat: this is a qualitative, back-of-the-envelope estimate, not the result of a dedicated benchmark of compressed streams — we didn't measure the actual size of GZIP/Brotli packets for different mutation shares, we extrapolated the effect of uneven compression from the nature of the data (uniform blanks vs. random indices). Treat 30% as a working heuristic worth re-checking and calibrating for your specific traffic profile, not a derived constant.
 
-This pragmatic threshold of **0.3 (30%)** is precisely what is fixed in our response rendering pipeline. If changes are small (the user enters characters into a field), an ultra-light binary delta is sent. If the screen is redrawn extensively (opening a new form, calling a menu), the engine immediately drops optimization and sends a flat full frame. When compressed, it weighs less than a delta packet overloaded with unique mutation indices.
+This empirically chosen threshold of **0.3 (30%)** is precisely what is fixed in our response rendering pipeline. If changes are small (the user enters characters into a field), an ultra-light binary delta is sent. If the screen is redrawn extensively (opening a new form, calling a menu), the engine immediately drops optimization and sends a flat full frame. When compressed, it weighs less than a delta packet overloaded with unique mutation indices.
 
-## Chapter 4. Limitations, Tradeoffs, and the Cost of Solutions (Trade-Offs)
+## 📌 Chapter 4. Limitations, Tradeoffs, and the Cost of Solutions (Trade-Offs)
 
 ### HTTP vs. gRPC
 
@@ -500,8 +506,10 @@ To clearly illustrate the cost of the text format, we compared the marshaling sp
 ### Fun Math: When Will Allocations Gobble Up Gigabytes?
 Nevertheless, even the optimized figure of **63.32 KB** per full session cycle (creation, transitions, buffer writes, and deletions) represents a significant allocation on the .NET service side within a single transaction. For fun, we can hypothetically estimate the load that would cause gigabytes of memory consumption and evaluate whether the engine and Redis can handle it.
 
+One caveat up front: the number in this section isn't a forecast of real-world load for a single warehouse — it's a deliberately inflated stress ceiling. A single site with a fleet of handheld terminals typically generates load one to two orders of magnitude lower (tens to low hundreds of concurrent operators, and correspondingly tens to low hundreds of RPS, not thousands). 1,000 RPS stands in for a multi-warehouse scenario — several dozen warehouses served by a single backend cluster at once — meant to show where the memory red line actually is, not to estimate the load of a typical single deployment.
+
 *   **.NET Heap Allocations**:
-    Assuming the application processes a constant load of 1,000 RPS (requests per second), the total amount of heap memory allocated would be: `1,000 requests * 63.32 KB = 63.32 MB` per second.
+    Assuming the application processes a constant load of 1,000 RPS (requests per second) — that same multi-warehouse stress scenario — the total amount of heap memory allocated would be: `1,000 requests * 63.32 KB = 63.32 MB` per second.
     In one minute of continuous operation, the Garbage Collector would be forced to process and dispose of approximately **3.6 GB** of garbage. In reality, this is a manageable task for a modern CLR within the `Gen0` generation, but on weak cloud virtual machines, it could lead to increased latency due to garbage collection pauses.
 
 *   **RAM consumption in Redis (In-Memory Storage):**
@@ -520,8 +528,20 @@ In the current design, the engine first generates a frame in a leased `Pixel[] p
 * **Development vector:** Combining these stages. Switching the renderer to write directly to `Span<uint>` (directly to an array rented from `ArrayPool<uint>`) will remove the intermediate `Pixel[]` buffer, get rid of the transport array allocation on the heap, and reduce frame allocations to absolute zero.
 
 #### 2. Scaling the Step State Machine
-Using a flat `switch-case` based on `Command<TEnum>` ensures the fastest O(1) state switching at runtime. However, for complex business processes (where a chain of warehouse receiving steps can contain dozens of branches), manually describing such transitions reduces code readability.
-* **Solution:** In production use, the optimal solution to this problem is to use **C# Source Generators**. The developer can describe multi-step scenarios in an elegant declarative Fluent API, and the code generator will expand it at compile time into a similar, highly efficient, and flat `switch-case`, preserving both the clean architecture and Zero Allocation at runtime.
+Using a flat `switch-case` based on `Command<TEnum>` ensures the fastest O(1) state switching at runtime (see Chapter 2). However, for complex business processes (where a chain of warehouse receiving steps can contain dozens of branches), manually describing such transitions reduces code readability.
+* **Solution:** In production use, the optimal solution to this problem would be **C# Source Generators**. The developer would describe steps declaratively, as attributes on partial methods:
+  ```csharp
+  [GenerateStateMachine]
+  public partial class ReceivingSequenceCommand : Command<MultiStepState>
+  {
+      [Step(MultiStepState.Initial)]
+      partial ValueTask<bool> OnInitial(ICommandContext context);
+
+      [Step(MultiStepState.Processing)]
+      partial ValueTask<bool> OnProcessing(ICommandContext context);
+  }
+  ```
+  and at compile time the generator would expand the `[Step]` attributes into the same flat, aggressively inlined `switch-case` used today, preserving both the clean architecture and Zero Allocation at runtime. This isn't implemented as of publication — it's an open development direction, not a shipped feature.
 
 #### 3. Encapsulation Security in gRPC Serialization
 The optimization of `UseConstructor = false` in `protobuf-net` allowed us to completely suppress allocations when assembling command objects from a binary stream. This imposes a strict requirement on the Domain Model design: field validation should not be tied to record constructors. Within the Backend-Driven UI architecture, this compromise is entirely justified, since all heavy data validation occurs server-side within the command execution context, not during transport packet deserialization.

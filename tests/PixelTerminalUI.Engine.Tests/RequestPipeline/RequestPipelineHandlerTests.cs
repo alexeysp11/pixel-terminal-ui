@@ -959,4 +959,230 @@ public sealed class RequestPipelineHandlerTests
             .Should()
             .NotBeNull("because dropping double buffering performance configurations should never disrupt basic request processing streams operations");
     }
+
+    [Fact]
+    public async Task HandleInputAsync_WhenFocusedWidgetIsTextEntry_ShouldIncludeFocusedInputGeometryInResponse()
+    {
+        // Arrange
+        Guid sessionId = Guid.NewGuid();
+        Guid focusedWidgetId = Guid.NewGuid();
+        string userInput = "ABC";
+
+        TextEntryWidget activeWidget = new()
+        {
+            Id = focusedWidgetId,
+            Name = "SerialNumberEditor",
+            Value = string.Empty,
+            Visible = true,
+            Left = 4,
+            Top = 7,
+            Width = 12,
+            Foreground = ConsoleColor.Cyan,
+            Background = ConsoleColor.DarkBlue,
+            Inverted = true
+        };
+
+        SimpleMessageScreen screen = new()
+        {
+            Id = Guid.NewGuid(),
+            SessionId = sessionId,
+            Name = "FocusGeometryScreen",
+            Width = 20,
+            Height = 10,
+            FocusedEntryWidgetId = focusedWidgetId,
+            Widgets = [activeWidget]
+        };
+
+        TerminalRequest request = new(sessionId, userInput);
+
+        _sessionRepositoryMock
+            .Setup(r => r.GetActiveScreenAsync(sessionId, default))
+            .ReturnsAsync(screen);
+
+        // Keep focus pinned to the same widget after processing, simulating a single-field screen
+        _focusManagerMock
+            .Setup(f => f.GetNextFocus(It.IsAny<TerminalScreen>()))
+            .Returns(focusedWidgetId);
+
+        // Act
+        TerminalResponse response = await _sut.HandleInputAsync(request);
+
+        // Assert
+        response.FocusedInput
+            .Should()
+            .NotBeNull("because the active screen still holds an editable widget in focus after processing the request");
+
+        response.FocusedInput!.X
+            .Should()
+            .Be(activeWidget.Left, "because X reports the widget's left edge; the client derives the actual cursor column from X plus the seeded buffer length");
+
+        response.FocusedInput.Y
+            .Should()
+            .Be(activeWidget.Top, "because the vertical cursor position must match the focused widget's row");
+
+        response.FocusedInput.MaxLength
+            .Should()
+            .Be(activeWidget.Width, "because the client must clamp local echo to the widget's rendered width");
+
+        response.FocusedInput.IsMasked
+            .Should()
+            .BeFalse("because a plain TextEntryWidget must never trigger password-style masking on the client");
+
+        response.FocusedInput.EmptyFillChar
+            .Should()
+            .Be(activeWidget.EmptyEnterSymbol, "because backspace on the client must restore the same placeholder character the server renders");
+
+        response.FocusedInput.Foreground
+            .Should()
+            .Be(activeWidget.Foreground, "because local echo must match the widget's configured foreground color instead of leaking stale console colors");
+
+        response.FocusedInput.Background
+            .Should()
+            .Be(activeWidget.Background, "because local echo must match the widget's configured background color instead of leaking stale console colors");
+
+        response.FocusedInput.Inverted
+            .Should()
+            .BeTrue("because the client must swap foreground and background the same way the server-side pixel renderer does");
+
+        response.FocusedInput.InitialValue
+            .Should()
+            .Be(userInput, "because the client must seed its local edit buffer with the freshly committed value so backspace can remove it");
+    }
+
+    [Fact]
+    public async Task HandleInputAsync_WhenFocusedWidgetValueOverflowsWidth_ShouldTruncateInitialValueToMaxLength()
+    {
+        // Arrange
+        Guid sessionId = Guid.NewGuid();
+        Guid focusedWidgetId = Guid.NewGuid();
+        string userInput = "OVERFLOWING-VALUE";
+
+        TextEntryWidget activeWidget = new()
+        {
+            Id = focusedWidgetId,
+            Name = "NarrowFieldEditor",
+            Value = string.Empty,
+            Visible = true,
+            Left = 0,
+            Top = 0,
+            Width = 5
+        };
+
+        SimpleMessageScreen screen = new()
+        {
+            Id = Guid.NewGuid(),
+            SessionId = sessionId,
+            Name = "FocusOverflowScreen",
+            Width = 20,
+            Height = 10,
+            FocusedEntryWidgetId = focusedWidgetId,
+            Widgets = [activeWidget]
+        };
+
+        TerminalRequest request = new(sessionId, userInput);
+
+        _sessionRepositoryMock
+            .Setup(r => r.GetActiveScreenAsync(sessionId, default))
+            .ReturnsAsync(screen);
+
+        _focusManagerMock
+            .Setup(f => f.GetNextFocus(It.IsAny<TerminalScreen>()))
+            .Returns(focusedWidgetId);
+
+        // Act
+        TerminalResponse response = await _sut.HandleInputAsync(request);
+
+        // Assert
+        response.FocusedInput!.InitialValue
+            .Should()
+            .Be(userInput[..activeWidget.Width], "because the client must never receive more seed characters than the widget can visually hold");
+    }
+
+    [Fact]
+    public async Task HandleInputAsync_WhenFocusedWidgetIsPasswordEntry_ShouldMarkFocusedInputAsMasked()
+    {
+        // Arrange
+        Guid sessionId = Guid.NewGuid();
+        Guid focusedWidgetId = Guid.NewGuid();
+
+        PasswordEntryWidget activeWidget = new()
+        {
+            Id = focusedWidgetId,
+            Name = "PinCodeEditor",
+            Value = string.Empty,
+            Visible = true,
+            Left = 2,
+            Top = 3,
+            Width = 6
+        };
+
+        SimpleMessageScreen screen = new()
+        {
+            Id = Guid.NewGuid(),
+            SessionId = sessionId,
+            Name = "MaskedFocusScreen",
+            Width = 20,
+            Height = 10,
+            FocusedEntryWidgetId = focusedWidgetId,
+            Widgets = [activeWidget]
+        };
+
+        TerminalRequest request = new(sessionId, "1234");
+
+        _sessionRepositoryMock
+            .Setup(r => r.GetActiveScreenAsync(sessionId, default))
+            .ReturnsAsync(screen);
+
+        _focusManagerMock
+            .Setup(f => f.GetNextFocus(It.IsAny<TerminalScreen>()))
+            .Returns(focusedWidgetId);
+
+        // Act
+        TerminalResponse response = await _sut.HandleInputAsync(request);
+
+        // Assert
+        response.FocusedInput
+            .Should()
+            .NotBeNull("because a focused password widget must still report its geometry to the client");
+
+        response.FocusedInput!.IsMasked
+            .Should()
+            .BeTrue("because the client must never echo raw characters typed into a password field");
+
+        response.FocusedInput.InitialValue
+            .Should()
+            .BeEmpty("because raw secret content must never be sent back to the client for re-editing, even though the value was just committed");
+    }
+
+    [Fact]
+    public async Task HandleInputAsync_WhenNoWidgetIsFocused_ShouldReturnNullFocusedInput()
+    {
+        // Arrange
+        Guid sessionId = Guid.NewGuid();
+
+        SimpleMessageScreen screen = new()
+        {
+            Id = Guid.NewGuid(),
+            SessionId = sessionId,
+            Name = "InformationalScreenWithoutInputs",
+            Width = 20,
+            Height = 10,
+            FocusedEntryWidgetId = null,
+            Widgets = []
+        };
+
+        TerminalRequest request = new(sessionId, string.Empty);
+
+        _sessionRepositoryMock
+            .Setup(r => r.GetActiveScreenAsync(sessionId, default))
+            .ReturnsAsync(screen);
+
+        // Act
+        TerminalResponse response = await _sut.HandleInputAsync(request);
+
+        // Assert
+        response.FocusedInput
+            .Should()
+            .BeNull("because a screen without an active input widget has nothing for the client to position a cursor on");
+    }
 }

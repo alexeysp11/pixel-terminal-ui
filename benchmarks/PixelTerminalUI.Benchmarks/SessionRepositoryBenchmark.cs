@@ -44,7 +44,7 @@ public class SessionRepositoryBenchmark
         JsonSerializerOptions jsonOptions = typeResolver.CreateOptions();
         RedisCacheOptions cacheOptions = new();
 
-        _redisMultiplexer = ConnectionMultiplexer.Connect("localhost:6379,password=secret_password_123,abortConnect=false");
+        _redisMultiplexer = ConnectionMultiplexer.Connect("localhost:6379,abortConnect=false");
         _redisRepository = new RedisTerminalSessionRepository(NullLogger<RedisTerminalSessionRepository>.Instance, _redisMultiplexer, jsonOptions, cacheOptions);
     }
 
